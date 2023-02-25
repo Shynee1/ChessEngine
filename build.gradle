@@ -1,0 +1,65 @@
+buildscript {
+    
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        google()
+    }
+    dependencies {
+
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+
+    version = '1.0'
+    ext {
+        appName = "ChessBoxing"
+        gdxVersion = '1.11.0'
+        roboVMVersion = '2.3.16'
+        box2DLightsVersion = '1.5'
+        ashleyVersion = '1.7.4'
+        aiVersion = '1.8.2'
+        gdxControllersVersion = '2.2.1'
+        shapedrawerVersion = '2.5.0'
+    }
+
+    repositories {
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://jitpack.io" }
+    }
+}
+
+project(":desktop") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation project(":core")
+
+        implementation 'com.github.tommyettinger:colorful:0.8.4'
+        api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        implementation 'com.google.code.gson:gson:2.10'
+    }
+}
+
+project(":core") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation 'com.github.tommyettinger:colorful:0.8.4'
+        implementation "space.earlygrey:shapedrawer:$shapedrawerVersion"
+        implementation 'com.google.code.gson:gson:2.10'
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+    }
+}
