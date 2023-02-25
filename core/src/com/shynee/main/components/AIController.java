@@ -38,9 +38,9 @@ public class AIController extends Component {
     public void update(float dt, SpriteBatch batch) {
         if (board.colorToMove() != color) return;
 
-        search(3, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        System.out.println("cycle");
-        //bestMove = getRandomMove();
+        //search(3, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        //System.out.println("cycle");
+        bestMove = getRandomMove();
 
         if (bestMove != null) board.makeMove(bestMove);
 
@@ -49,7 +49,7 @@ public class AIController extends Component {
     private Move getRandomMove(){
         Random random = new Random();
 
-        List<Move> legals = board.getMoveCalculator().getLegalMoves(color);
+        List<Move> legals = board.getMoveCalculator().getLegalMoves(board, board.colorToMove());
         if (legals.isEmpty()) return null;
 
         return legals.get(random.nextInt(legals.size()));
@@ -60,7 +60,7 @@ public class AIController extends Component {
         if (depth == 0) return quiescenceSearch(alpha, beta);
 
         boolean color = board.colorToMove();
-        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(color);
+        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
 
         if (legalMoves.isEmpty()){
             if (color ? board.isWhiteCheck : board.isBlackCheck){
@@ -96,8 +96,7 @@ public class AIController extends Component {
         if (eval > alpha) alpha = eval;
 
         boolean color = board.colorToMove();
-
-        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(color);
+        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
 
         for (Move legalMove : legalMoves) {
 

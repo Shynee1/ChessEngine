@@ -1,6 +1,5 @@
 package com.shynee.main.scenes;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -19,8 +18,6 @@ public class ChessScene extends Scene {
     private final String FEN;
     private final boolean playerColor;
 
-    private ChessBoard board;
-
     public ChessScene(String FEN, boolean color){
         super();
         this.FEN = FEN;
@@ -31,7 +28,7 @@ public class ChessScene extends Scene {
     public void start(){
         loadResources();
         this.camera = new OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-        this.board = new ChessBoard(FEN, playerColor);
+        ChessBoard board = new ChessBoard(FEN, playerColor);
 
         super.start();
 
@@ -49,7 +46,7 @@ public class ChessScene extends Scene {
 
         GameObject aiPlayer = new GameObject("AiPLayer");
         aiPlayer.addComponent(new AIController(!playerColor, board));
-        addGameObject(aiPlayer);
+        //addGameObject(aiPlayer);
 
         GameObject aiPlayer2 = new GameObject("AiPLayer2");
         aiPlayer2.addComponent(new AIController(playerColor, board));

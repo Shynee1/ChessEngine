@@ -1,7 +1,6 @@
 package com.shynee.main.chess;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.shynee.main.utils.Constants;
 import com.shynee.main.utils.Transform;
@@ -27,9 +26,9 @@ public class ChessBoard {
 
     private final List<Square> coloredSquares;
 
-    private final List<Move> pinnedPieces;
-    private final List<Move> checkingMoves;
-    private final List<Move> blockingMoves;
+    public final List<Move> pinnedPieces;
+    public final List<Move> checkingMoves;
+    public final List<Move> blockingMoves;
 
     public Square whiteKingSquare;
     public boolean isWhiteCheck;
@@ -113,11 +112,9 @@ public class ChessBoard {
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
 
-        moveCalculator.recomputeLegalMoves(isWhiteCheck, isBlackCheck, checkingMoves, pinnedPieces, blockingMoves);
-
         /*
         if ((isWhiteCheck && moveCalculator.getLegalMoves(true).isEmpty()) || (isBlackCheck && moveCalculator.getLegalMoves(false).isEmpty()))
-            Main.changeScene(new ChessScene(Constants.DEFUALT_FEN, true));
+            Main.changeScene(new ChessScene(Constants.DEFAULT_FEN, true));
             
          */
 
@@ -166,7 +163,7 @@ public class ChessBoard {
             moveCalculator.recomputeMoves(this, rookSquare, previousRookSquare);
 
         } else if (lastMovePromotion){
-            startSquare.setPiece(new Piece(Piece.PAWN, newSquare.getPiece().color));;
+            startSquare.setPiece(new Piece(Piece.PAWN, newSquare.getPiece().color));
             this.lastMovePromotion = false;
         } else {
             startSquare.setPiece(newSquare.getPiece());
@@ -180,8 +177,6 @@ public class ChessBoard {
 
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
-
-        moveCalculator.recomputeLegalMoves(isWhiteCheck, isBlackCheck, checkingMoves, pinnedPieces, blockingMoves);
 
         this.isTurnToMove = !isTurnToMove;
     }
@@ -276,9 +271,7 @@ public class ChessBoard {
 
 
     public void generatePossibleMoves(int squarePosition){
-        Square square = board[squarePosition];
-
-        List<Move> legalMoves = moveCalculator.getLegalMoves(square.getPiece().color);
+        List<Move> legalMoves = moveCalculator.getLegalMoves(this, isTurnToMove);
         legalMoves.removeIf(m-> m.piecePos!=squarePosition);
 
         for (Move m : legalMoves){
@@ -409,7 +402,6 @@ public class ChessBoard {
         return board;
     }
 
-
     public List<Square> getSquares(boolean color){
         List<Square> squaresForColor = new ArrayList<>();
         for (Square s : board){
@@ -438,7 +430,7 @@ public class ChessBoard {
     }
 
     public Move getMove(int prevPos, int newPos){
-        for (Move m : getMoveCalculator().getLegalMoves()){
+        for (Move m : getMoveCalculator().getLegalMoves(this, isTurnToMove)){
             if (m.piecePos == prevPos && m.squarePos == newPos) return m;
         }
 

@@ -7,9 +7,8 @@ public class MoveCalculator {
     private HashMap<Square, List<Move>> pseudoMoves;
     private HashMap<Integer, int[]> directionOffsets;
 
-    private Square[] board;
-
-    private List<Move> legalMoves;
+    private Square[] squares;
+    private ChessBoard board;
     private List<Move> possibleMoves;
 
     private boolean primaryPieceColor;
@@ -22,45 +21,58 @@ public class MoveCalculator {
 
     public void precomputeMoves(ChessBoard chessBoard){
         this.pseudoMoves = new HashMap<>();
-        this.legalMoves = new ArrayList<>();
+        this.board = chessBoard;
+        this.squares = chessBoard.getSquares();
 
-        this.board = chessBoard.getSquares();
-
-        for (Square square : board) {
+        for (Square square : squares) {
             if (square.hasPiece()) {
                 pseudoMoves.put(square, calculateMove(square));
-                legalMoves.addAll(getLegalMovesForSquare(square, false));
             }
         }
     }
 
     public void recomputeMoves(ChessBoard chessBoard, Square previousSquare, Square newSquare){
-        this.board = chessBoard.getSquares();
+        this.squares = chessBoard.getSquares();
+        this.board = chessBoard;
 
         pseudoMoves.remove(previousSquare);
         pseudoMoves.put(newSquare, calculateMove(newSquare));
 
     }
 
-    public void recomputeLegalMoves(boolean isWhiteChecked, boolean isBlackChecked, List<Move> checkingMoves, List<Move> pinnedPieces, List<Move> blockingMoves){
-        this.legalMoves = new ArrayList<>();
+    public List<Move> getLegalMoves(ChessBoard chessBoard, boolean color, boolean inIntersection, boolean includeColor){
+        List<Move> legalMoves = new ArrayList<>();
+        this.board = chessBoard;
 
-        if (isWhiteChecked) legalMoves.addAll(recomputeBlocks(blockingMoves, true));
-        if (isBlackChecked) legalMoves.addAll(recomputeBlocks(blockingMoves, false));
+        boolean isWhiteChecked = board.isWhiteCheck;
+        boolean isBlackChecked = board.isBlackCheck;
 
+        if (isWhiteChecked && !inIntersection) legalMoves.addAll(recomputeBlocks(board.blockingMoves, true));
+        if (isBlackChecked && !inIntersection) legalMoves.addAll(recomputeBlocks(board.blockingMoves, false));
 
         for (Square s : pseudoMoves.keySet()){
-            List<Move> legals = getLegalMovesForSquare(s, s.getPiece().color?isWhiteChecked:isBlackChecked, checkingMoves, pinnedPieces);
+            if (s.getPiece().color != color) continue;
+
+            List<Move> legals;
+            if (inIntersection) legals = getLegalMovesForSquare(s, includeColor);
+            else legals = getLegalMovesForSquare(s, s.getPiece().color?isWhiteChecked:isBlackChecked, board.checkingMoves, board.pinnedPieces);
+
             legalMoves.addAll(legals);
         }
 
+        return legalMoves;
+
     }
 
-    public List<Move> recomputeBlocks(List<Move> blockingMoves, boolean color){
+    public List<Move> getLegalMoves(ChessBoard board, boolean color){
+        return getLegalMoves(board, color, false, false);
+    }
+
+    private List<Move> recomputeBlocks(List<Move> blockingMoves, boolean color){
         List<Move> possibleBlocks = new ArrayList<>();
 
         for (Move m : blockingMoves){
-            possibleBlocks.addAll(findLegalMoveIntersection(board[m.squarePos], color, false, true));
+            possibleBlocks.addAll(findLegalMoveIntersection(squares[m.squarePos], color, false, true));
         }
         return possibleBlocks;
     }
@@ -68,20 +80,10 @@ public class MoveCalculator {
 
     public List<Move> findLegalMoveIntersection(Square square, boolean color, boolean includeColor, boolean forBlocks) {
         List<Move> legalMoveIntersection = new ArrayList<>();
-        List<Move> moveIntersection = findMoveIntersection(square, color);
 
-        for (Move move : moveIntersection){
-            if (forBlocks && board[move.piecePos].getPiece().type == Piece.KING) continue;
-
-            if (board[move.piecePos].getPiece().type == Piece.PAWN) {
-                if (Math.abs(move.directionOffset) != 8 && (!forBlocks || board[move.squarePos].hasPiece())) legalMoveIntersection.add(move);
-                if (forBlocks && Math.abs(move.directionOffset) == 8 && !board[move.squarePos].hasPiece()) legalMoveIntersection.add(move);
-                continue;
-            }
-
-            for (Move m : getLegalMovesForSquare(board[move.piecePos], includeColor)){
-                if (m.squarePos == move.squarePos) legalMoveIntersection.add(m);
-            }
+        for (Move move : getLegalMoves(board, color, true, includeColor)){
+            if (forBlocks && squares[move.piecePos].getPiece().type == Piece.KING) continue;
+            if (move.squarePos == square.getArrayPosition()) legalMoveIntersection.add(move);
         }
 
         return legalMoveIntersection;
@@ -93,7 +95,7 @@ public class MoveCalculator {
 
         for (List<Move> moves : pseudoMoves.values()){
             for (Move m : moves) {
-                if (m.squarePos == square.getArrayPosition() && board[m.piecePos].getPiece().color == color) intersectedSquares.add(m);
+                if (m.squarePos == square.getArrayPosition() && squares[m.piecePos].getPiece().color == color) intersectedSquares.add(m);
             }
 
         }
@@ -117,7 +119,7 @@ public class MoveCalculator {
         if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle(true));
 
         for (Move m : getLegalMovesForSquare(kingSquare, false)){
-            if (findLegalMoveIntersection(board[m.squarePos], !kingSquare.getPiece().color, true, false).isEmpty()) legalMoves.add(m);
+            if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false).isEmpty()) legalMoves.add(m);
 
             if (!isColorChecked) continue;
 
@@ -139,17 +141,17 @@ public class MoveCalculator {
         if (!kingSquare.hasPiece() || kingSquare.getPiece().hasMoved) return false;
 
         int addRookIdx = right ? 3 : -4;
-        Square rookSquare = board[kingSquare.getArrayPosition()+addRookIdx];
+        Square rookSquare = squares[kingSquare.getArrayPosition()+addRookIdx];
 
         if (!rookSquare.hasPiece() || rookSquare.getPiece().hasMoved || rookSquare.getPiece().type != Piece.ROOK) return false;
 
         if (right){
             for (int i = kingSquare.getArrayPosition()+1; i < kingSquare.getArrayPosition() + addRookIdx; i++){
-                if (board[i].hasPiece() && findLegalMoveIntersection(board[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() && findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
             }
         } else {
             for (int i = kingSquare.getArrayPosition()-1; i > kingSquare.getArrayPosition() + addRookIdx; i--){
-                if (board[i].hasPiece() && findLegalMoveIntersection(board[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() && findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
             }
         }
 
@@ -191,7 +193,7 @@ public class MoveCalculator {
         HashSet<Integer> invalidDirections = new HashSet<>();
 
         for (Move m : pseudoMovesForSquare){
-            Square s = board[m.squarePos];
+            Square s = squares[m.squarePos];
 
             if (!square.getPiece().hasMoved) m.setFirstMove();
 
@@ -201,10 +203,10 @@ public class MoveCalculator {
                 if (Math.abs(m.directionOffset) != 8) {
                     if (!s.hasPiece()) continue;
                 } else {
-                    if (board[m.squarePos].hasPiece()) continue;
+                    if (squares[m.squarePos].hasPiece()) continue;
 
                     int firstSquarePos = square.getPiece().color ? m.squarePos-8 : m.squarePos+8;
-                    if (firstSquarePos != m.piecePos && (board[firstSquarePos].hasPiece())) continue;
+                    if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece())) continue;
                 }
             }
 
@@ -303,17 +305,5 @@ public class MoveCalculator {
     private boolean checkSpacing(int prevRank, int newRank, int prevFile, int newFile, int target, boolean equals){
         int max = Math.max(Math.abs(prevRank - newRank), Math.abs(prevFile - newFile));
         return equals ? (max == target) : (max <= target);
-    }
-
-
-    public List<Move> getLegalMoves(boolean color){
-        List<Move> legal = new ArrayList<>(legalMoves);
-
-        legal.removeIf(m -> board[m.piecePos].getPiece().color != color);
-        return legal;
-    }
-
-    public List<Move> getLegalMoves(){
-        return legalMoves;
     }
 }

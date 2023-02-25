@@ -17,7 +17,7 @@ public class Main extends Game {
 	public void create () {
 
 		batch = new SpriteBatch();
-		changeScene(new ChessScene(Constants.DEFUALT_FEN, true));
+		changeScene(new ChessScene(Constants.DEFAULT_FEN, true));
 	}
 
 	@Override
