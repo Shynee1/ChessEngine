@@ -11,18 +11,21 @@ import java.util.Random;
 
 public class AIController extends Component {
 
-    private final int pawnValue = 10;
-    private final int knightValue = 30;
-    private final int bishopValue = 30;
-    private final int rookValue = 50;
-    private final int queenValue = 90;
+    private final int pawnValue = 1;
+    private final int knightValue = 3;
+    private final int bishopValue = 3;
+    private final int rookValue = 5;
+    private final int queenValue = 9;
     private final int kingValue = 900;
 
+    private final int positiveInfinity = 9999999;
+	private final int negativeInfinity = -positiveInfinity;
 
     private final boolean color;
     private final ChessBoard board;
 
     private Move bestMove = null;
+    private int bestMoveDepth = 0;
 
     public AIController(boolean aiColor, ChessBoard board){
         this.color = aiColor;
@@ -38,9 +41,8 @@ public class AIController extends Component {
     public void update(float dt, SpriteBatch batch) {
         if (board.colorToMove() != color) return;
 
-        //search(3, Integer.MIN_VALUE, Integer.MAX_VALUE);
-        //System.out.println("cycle");
-        bestMove = getRandomMove();
+        search(3, negativeInfinity, positiveInfinity, 0);
+        //bestMove = getRandomMove();
 
         if (bestMove != null) board.makeMove(bestMove);
 
@@ -55,9 +57,10 @@ public class AIController extends Component {
         return legals.get(random.nextInt(legals.size()));
     }
 
-    private int search(int depth, int alpha, int beta){
-        //System.out.println(depth);
-        if (depth == 0) return quiescenceSearch(alpha, beta);
+    private int search(int depth, int alpha, int beta, int plyFromRoot){
+        if (depth == 0) {
+            return evaluate();
+        }
 
         boolean color = board.colorToMove();
         List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
@@ -72,7 +75,7 @@ public class AIController extends Component {
         for (Move legalMove : legalMoves) {
 
             board.makeMove(legalMove);
-            int eval = -search(depth-1, -beta, -alpha);
+            int eval = -search(depth-1, -beta, -alpha, plyFromRoot+1);
             board.unmakeMove(legalMove);
 
             if (eval >= beta) {
@@ -81,8 +84,10 @@ public class AIController extends Component {
 
             if (eval > alpha) {
                 alpha = eval;
-
-                this.bestMove = legalMove;
+                if (plyFromRoot == 0){
+                    this.bestMove = legalMove;
+                    this.bestMoveDepth = depth;
+                }
             }
         }
 
@@ -96,17 +101,18 @@ public class AIController extends Component {
         if (eval > alpha) alpha = eval;
 
         boolean color = board.colorToMove();
-        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
+        List<Move> legalCaptures = board.getMoveCalculator().getLegalCaptures(board, color);
 
-        for (Move legalMove : legalMoves) {
+        for (Move move : legalCaptures) {
 
-            board.makeMove(legalMove);
+            board.makeMove(move);
             eval = -quiescenceSearch(-beta, -alpha);
-            board.unmakeMove(legalMove);
+            board.unmakeMove(move);
 
             if (eval >= beta) return beta;
             if (eval > alpha) alpha = eval;
         }
+
         return alpha;
     }
 

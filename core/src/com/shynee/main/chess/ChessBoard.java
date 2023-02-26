@@ -36,7 +36,6 @@ public class ChessBoard {
     public Square blackKingSquare;
     public boolean isBlackCheck;
 
-    private boolean lastMovePromotion;
     private boolean isTurnToMove;
 
     public ChessBoard(String FEN, boolean playerColor){
@@ -45,7 +44,6 @@ public class ChessBoard {
 
         this.isWhiteCheck = false;
         this.isBlackCheck = false;
-        this.lastMovePromotion = false;
 
         this.piecesMap = new HashMap<>();
         this.possibleMoves = new HashMap<>();
@@ -87,6 +85,10 @@ public class ChessBoard {
         if (move.isCastle) {
             newSquare = handleCastle(previousSquare, move.directionOffset);
             captures.push(null);
+        } else if (move.isPromotion){
+            captures.push(newSquare.getPiece());
+            newSquare.promotePiece(Piece.QUEEN, previousSquare.getPiece().color);
+            previousSquare.setPiece(null);
         }
         else {
             captures.push(newSquare.getPiece());
@@ -99,13 +101,8 @@ public class ChessBoard {
             else this.blackKingSquare = newSquare;
         }
 
-        handlePromotions(newSquare);
-
-        if (!colorToMove()){
-            highlightSquare(previousSquare, Constants.MOVE_COLOR);
-            highlightSquare(newSquare, Constants.MOVE_COLOR);
-        }
-
+        highlightSquare(previousSquare, Constants.MOVE_COLOR);
+        highlightSquare(newSquare, Constants.MOVE_COLOR);
 
         moveCalculator.recomputeMoves(this, previousSquare, newSquare);
 
@@ -162,9 +159,9 @@ public class ChessBoard {
             moveCalculator.recomputeMoves(this, kingSquare, previousKingSquare);
             moveCalculator.recomputeMoves(this, rookSquare, previousRookSquare);
 
-        } else if (lastMovePromotion){
+        } else if (move.isPromotion){
             startSquare.setPiece(new Piece(Piece.PAWN, newSquare.getPiece().color));
-            this.lastMovePromotion = false;
+            newSquare.setPiece(lastCapture);
         } else {
             startSquare.setPiece(newSquare.getPiece());
             newSquare.setPiece(lastCapture);
@@ -258,17 +255,6 @@ public class ChessBoard {
         if (num == 1) return pieceMove;
         else return null;
     }
-
-    private void handlePromotions(Square square){
-        boolean pieceColor = square.getPiece().color;
-
-        int targetSquare = pieceColor ? 7 : 0;
-        if (square.getPiece().type == Piece.PAWN && square.getTransform().position.y/squareSize == targetSquare){
-            this.lastMovePromotion = true;
-            square.promotePiece(Piece.QUEEN);
-        }
-    }
-
 
     public void generatePossibleMoves(int squarePosition){
         List<Move> legalMoves = moveCalculator.getLegalMoves(this, isTurnToMove);

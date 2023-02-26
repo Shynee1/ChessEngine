@@ -6,6 +6,7 @@ public class Move {
     public int squarePos;
     public int directionOffset;
     public boolean isCastle;
+    public boolean isPromotion;
     public boolean isFirstMove;
 
     public Move(int oldSquarePos, int newSquarePos, int directionOffset){
@@ -14,8 +15,13 @@ public class Move {
         this.directionOffset = directionOffset;
     }
 
-    public Move setCastle(boolean canCastle){
-        this.isCastle = canCastle;
+    public Move setCastle(){
+        this.isCastle = true;
+        return this;
+    }
+
+    public Move setPromotion(){
+        this.isPromotion = true;
         return this;
     }
 

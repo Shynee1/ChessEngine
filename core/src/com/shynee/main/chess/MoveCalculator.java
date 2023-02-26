@@ -68,6 +68,12 @@ public class MoveCalculator {
         return getLegalMoves(board, color, false, false);
     }
 
+    public List<Move> getLegalCaptures(ChessBoard board, boolean color){
+        List<Move> legalCaptures = getLegalMoves(board, color);
+        legalCaptures.removeIf(m->!squares[m.squarePos].hasPiece());
+        return legalCaptures;
+    }
+
     private List<Move> recomputeBlocks(List<Move> blockingMoves, boolean color){
         List<Move> possibleBlocks = new ArrayList<>();
 
@@ -115,8 +121,8 @@ public class MoveCalculator {
         List<Move> legalMoves = new ArrayList<>();
         int kingPos = kingSquare.getArrayPosition();
 
-        if (canCastle(kingSquare, true) && !isColorChecked) legalMoves.add(new Move(kingPos,kingPos+3, 1).setCastle(true));
-        if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle(true));
+        if (canCastle(kingSquare, true) && !isColorChecked) legalMoves.add(new Move(kingPos,kingPos+3, 1).setCastle());
+        if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle());
 
         for (Move m : getLegalMovesForSquare(kingSquare, false)){
             if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false).isEmpty()) legalMoves.add(m);
@@ -255,8 +261,12 @@ public class MoveCalculator {
             possibleMoves.add(new Move(squarePosition,newPos+directionOffset, directionOffset));
         }
 
+        Move pawnMove = new Move(squarePosition, newPos, directionOffset);
 
-        possibleMoves.add(new Move(squarePosition, newPos, directionOffset));
+        int promotionSquare = primaryPieceColor ? 7 : 0;
+        if (squares[newPos].getTransform().position.y/90 == promotionSquare) pawnMove.setPromotion();
+
+        possibleMoves.add(pawnMove);
     }
 
     private void calculateNonSlidingMove(int directionOffset){

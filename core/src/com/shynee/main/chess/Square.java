@@ -72,8 +72,8 @@ public class Square {
         this.isPossibleMove = isPossibleMove;
     }
 
-    public void promotePiece(int newPieceType){
-        if (hasPiece()) piece.type = newPieceType;
+    public void promotePiece(int newPieceType, boolean color){
+        this.setPiece(new Piece(newPieceType, color));
     }
 
     public boolean sharesPieceColor(Square square){
