@@ -9,7 +9,7 @@ import java.util.List;
 
 public class MoveOrdering {
 
-    private final static int pieceCaptureMultiplier = 10;
+    private final static int pieceCaptureMultiplier = 5;
     private final static int maxMoveCount = 218;
 
     public static List<Move> orderMoves(ChessBoard board, List<Move> moves){

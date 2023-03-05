@@ -8,6 +8,8 @@ import com.shynee.main.chess.BoardUtility;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.Main;
 import com.shynee.main.abstracts.Component;
+import com.shynee.main.chess.Move;
+import com.shynee.main.chess.PGNUtility;
 import com.shynee.main.utils.Constants;
 
 public class InputHandler extends Component {
@@ -62,7 +64,6 @@ public class InputHandler extends Component {
         }
 
         board.makeMove(board.getMove(previousClickedSquarePos, clickedSquare), false);
-
     }
 
     private int worldToArray(Vector2 worldCoords){

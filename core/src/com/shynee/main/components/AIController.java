@@ -31,7 +31,7 @@ public class AIController extends Component {
     public void update(float dt, SpriteBatch batch) {
         if (board.colorToMove() != color || !board.gameRunning) return;
 
-        Move bestMove = search.startSearch(5);
+        Move bestMove = search.startSearch(4);
         if (bestMove != null) board.makeMove(bestMove, false);
 
     }
