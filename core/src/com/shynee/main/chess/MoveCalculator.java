@@ -54,10 +54,16 @@ public class MoveCalculator {
             if (s.getPiece().color != color) continue;
 
             List<Move> legals;
-            if (inIntersection) legals = getLegalMovesForSquare(s, includeColor);
+            if (inIntersection) legals = getLegalMovesForSquare(s, true, includeColor);
             else legals = getLegalMovesForSquare(s, s.getPiece().color?isWhiteChecked:isBlackChecked, board.checkingMoves, board.pinnedPieces);
 
             legalMoves.addAll(legals);
+        }
+
+        for (Move m : legalMoves){
+            if (squares[m.piecePos].getPiece() == null) {
+                System.out.println("null");
+            }
         }
 
         return legalMoves;
@@ -110,7 +116,7 @@ public class MoveCalculator {
 
     public List<Move> getLegalMovesForSquare(Square square, int directionOffset){
         List<Move> res = new ArrayList<>();
-        for (Move m : getLegalMovesForSquare(square, false)){
+        for (Move m : getLegalMovesForSquare(square, false, false)){
             if (m.directionOffset == directionOffset) res.add(m);
         }
         return res;
@@ -124,11 +130,9 @@ public class MoveCalculator {
         if (canCastle(kingSquare, true) && !isColorChecked) legalMoves.add(new Move(kingPos,kingPos+3, 1).setCastle());
         if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle());
 
-        for (Move m : getLegalMovesForSquare(kingSquare, false)){
+        for (Move m : getLegalMovesForSquare(kingSquare, false, false)){
             if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false).isEmpty()) legalMoves.add(m);
-
             if (!isColorChecked) continue;
-
             if (containsMove(m, checkingMoves)) legalMoves.remove(m);
         }
 
@@ -143,21 +147,23 @@ public class MoveCalculator {
         return false;
     }
 
-    private boolean canCastle(Square kingSquare, boolean right){
+    public boolean canCastle(Square kingSquare, boolean kingSide){
         if (!kingSquare.hasPiece() || kingSquare.getPiece().hasMoved) return false;
 
-        int addRookIdx = right ? 3 : -4;
+        int addRookIdx = kingSide ? 3 : -4;
+        if (kingSquare.getArrayPosition() + addRookIdx >= 64 || kingSquare.getArrayPosition() + addRookIdx < 0) return false;
+
         Square rookSquare = squares[kingSquare.getArrayPosition()+addRookIdx];
 
         if (!rookSquare.hasPiece() || rookSquare.getPiece().hasMoved || rookSquare.getPiece().type != Piece.ROOK) return false;
 
-        if (right){
+        if (kingSide){
             for (int i = kingSquare.getArrayPosition()+1; i < kingSquare.getArrayPosition() + addRookIdx; i++){
-                if (squares[i].hasPiece() && findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
             }
         } else {
             for (int i = kingSquare.getArrayPosition()-1; i > kingSquare.getArrayPosition() + addRookIdx; i--){
-                if (squares[i].hasPiece() && findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
             }
         }
 
@@ -186,13 +192,13 @@ public class MoveCalculator {
 
         Move pinnedPiece = containsSquare(pinnedPieces, square);
 
-        if (pinnedPiece == null) legalMoves.addAll(getLegalMovesForSquare(square, false));
+        if (pinnedPiece == null) legalMoves.addAll(getLegalMovesForSquare(square, false, false));
         else legalMoves.addAll(getLegalMovesForSquare(square, pinnedPiece.directionOffset));
 
         return legalMoves;
     }
 
-    public List<Move> getLegalMovesForSquare(Square square, boolean includeColor){
+    public List<Move> getLegalMovesForSquare(Square square, boolean inIntersection, boolean includeColor){
         List<Move> pseudoMovesForSquare = pseudoMoves.get(square);
         List<Move> legalMoves = new ArrayList<>();
 
@@ -207,9 +213,9 @@ public class MoveCalculator {
 
             if (square.getPiece().type == Piece.PAWN){
                 if (Math.abs(m.directionOffset) != 8) {
-                    if (!s.hasPiece()) continue;
+                    if (!s.hasPiece() && !inIntersection) continue;
                 } else {
-                    if (squares[m.squarePos].hasPiece()) continue;
+                    if (squares[m.squarePos].hasPiece() || inIntersection) continue;
 
                     int firstSquarePos = square.getPiece().color ? m.squarePos-8 : m.squarePos+8;
                     if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece())) continue;
@@ -300,8 +306,8 @@ public class MoveCalculator {
     }
 
     private boolean isValid(int prevPos, int currentPos, int type){
-        int[] newRF = ChessBoard.getRankAndFile(currentPos);
-        int[] prevRF = ChessBoard.getRankAndFile(prevPos);
+        int[] newRF = BoardUtility.getRankAndFile(currentPos);
+        int[] prevRF = BoardUtility.getRankAndFile(prevPos);
         boolean isValidForType;
 
         switch (type){

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
+import com.shynee.main.chess.BoardUtility;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.Main;
 import com.shynee.main.abstracts.Component;
@@ -42,7 +43,7 @@ public class InputHandler extends Component {
     }
 
     private void handleFirstClick(int clickedSquare){
-        if (!board.canMove(clickedSquare)) return;
+        if (!board.getSquare(clickedSquare).hasPiece() || board.getSquare(clickedSquare).getPiece().color != board.colorToMove() || !board.gameRunning) return;
 
         this.previousClickedSquarePos = clickedSquare;
 
@@ -60,7 +61,7 @@ public class InputHandler extends Component {
             return;
         }
 
-        board.makeMove(board.getMove(previousClickedSquarePos, clickedSquare));
+        board.makeMove(board.getMove(previousClickedSquarePos, clickedSquare), false);
 
     }
 
@@ -68,7 +69,7 @@ public class InputHandler extends Component {
         worldCoords.x += mouseOffset;
         worldCoords.y = Constants.WORLD_HEIGHT - worldCoords.y;
 
-        return ChessBoard.getArrayIndex((int) worldCoords.y/squareSize, (int) worldCoords.x/squareSize);
+        return BoardUtility.getArrayIndex((int) worldCoords.y/squareSize, (int) worldCoords.x/squareSize);
     }
 
 }

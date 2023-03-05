@@ -61,7 +61,7 @@ public class Square {
     }
 
     public void setArrayPosition(int rank, int file){
-        this.arrayPosition = ChessBoard.getArrayIndex(rank, file);
+        this.arrayPosition = BoardUtility.getArrayIndex(rank, file);
     }
 
     public int getArrayPosition(){

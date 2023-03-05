@@ -1,9 +1,9 @@
 package com.shynee.main.chess;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector2;
+import com.shynee.main.Main;
+import com.shynee.main.scenes.ChessScene;
 import com.shynee.main.utils.Constants;
-import com.shynee.main.utils.Transform;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,15 +12,12 @@ import java.util.Stack;
 
 public class ChessBoard {
 
-    private final Square[] board;
-    private final int squareSize = Constants.WORLD_HEIGHT/8;
+    private Square[] board;
 
-    private final HashMap<Character, Piece> piecesMap;
     private final HashMap<Square, Move> possibleMoves;
 
     private final Stack<Piece> captures;
-    public Stack<Move> lastMove= new Stack<>();
-    private int numPly = 0;
+    public int numPly = 0;
 
     private final MoveCalculator moveCalculator;
 
@@ -30,22 +27,23 @@ public class ChessBoard {
     public final List<Move> checkingMoves;
     public final List<Move> blockingMoves;
 
+    public boolean gameRunning = false;
+
     public Square whiteKingSquare;
     public boolean isWhiteCheck;
 
     public Square blackKingSquare;
     public boolean isBlackCheck;
 
-    private boolean isTurnToMove;
+    private boolean colorToMove;
 
     public ChessBoard(String FEN, boolean playerColor){
         this.board = new Square[64];
-        this.isTurnToMove = playerColor;
+        this.colorToMove = playerColor;
 
         this.isWhiteCheck = false;
         this.isBlackCheck = false;
 
-        this.piecesMap = new HashMap<>();
         this.possibleMoves = new HashMap<>();
 
         this.captures = new Stack<>();
@@ -57,13 +55,14 @@ public class ChessBoard {
 
         this.moveCalculator = new MoveCalculator();
 
-        initPiecesMap();
-        initFEN(FEN);
+        loadPosition(FEN);
 
         moveCalculator.precomputeMoves(this);
+
+        this.gameRunning = true;
     }
 
-    public void makeMove(Move move){
+    public void makeMove(Move move, boolean inSearch) {
         Square previousSquare = board[move.piecePos];
         Square newSquare = board[move.squarePos];
 
@@ -72,31 +71,24 @@ public class ChessBoard {
         checkingMoves.clear();
         blockingMoves.clear();
 
-        try{
-            previousSquare.getPiece().hasMoved = true;
-        } catch (NullPointerException e){
-            System.out.println("PiecePos: " + move.piecePos);
-            System.out.println("SquarePos: " + move.squarePos);
-        }
+        previousSquare.getPiece().hasMoved = true;
 
         numPly++;
-        lastMove.push(move);
 
         if (move.isCastle) {
             newSquare = handleCastle(previousSquare, move.directionOffset);
             captures.push(null);
-        } else if (move.isPromotion){
+        } else if (move.isPromotion) {
             captures.push(newSquare.getPiece());
             newSquare.promotePiece(Piece.QUEEN, previousSquare.getPiece().color);
             previousSquare.setPiece(null);
-        }
-        else {
+        } else {
             captures.push(newSquare.getPiece());
             newSquare.setPiece(previousSquare.getPiece());
             previousSquare.setPiece(null);
         }
 
-        if (newSquare.hasKing()){
+        if (newSquare.hasKing()) {
             if (newSquare.getPiece().color) this.whiteKingSquare = newSquare;
             else this.blackKingSquare = newSquare;
         }
@@ -109,14 +101,20 @@ public class ChessBoard {
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
 
-        /*
-        if ((isWhiteCheck && moveCalculator.getLegalMoves(true).isEmpty()) || (isBlackCheck && moveCalculator.getLegalMoves(false).isEmpty()))
-            Main.changeScene(new ChessScene(Constants.DEFAULT_FEN, true));
-            
-         */
+        if (!inSearch && numPly == 100){
+            System.out.println("draw by move counter");
+            gameRunning = false;
+        }
+
+        if (!inSearch && ((isWhiteCheck && moveCalculator.getLegalMoves(this, true).isEmpty() || (isBlackCheck && moveCalculator.getLegalMoves(this, false).isEmpty())))){
+            System.out.println("checkmate");
+            gameRunning = false;
+        }
 
 
-        this.isTurnToMove = !isTurnToMove;
+        this.colorToMove = !colorToMove;
+
+        //if (!inSearch) System.out.println(FenUtility.savePosition(this));
     }
 
     public void unmakeMove(Move move){
@@ -131,6 +129,7 @@ public class ChessBoard {
         if (move.isFirstMove && !move.isCastle) newSquare.getPiece().hasMoved = false;
 
         Piece lastCapture = captures.pop();
+        numPly--;
 
         if (newSquare.hasKing() && !move.isCastle){
             if (newSquare.getPiece().color) whiteKingSquare = startSquare;
@@ -175,7 +174,7 @@ public class ChessBoard {
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
 
-        this.isTurnToMove = !isTurnToMove;
+        this.colorToMove = !colorToMove;
     }
 
     private Square handleCastle(Square kingSquare, int directionOffset){
@@ -216,9 +215,9 @@ public class ChessBoard {
 
             List<Move> legalMoves = moveCalculator.getLegalMovesForSquare(attackingPiece, checkMove.directionOffset);
 
-            if (!containsSquare(legalMoves, kingSquare)) {
-                Move pinnedPiece = getPiece(legalMoves, color);
-                if (pinnedPiece != null) pinnedPieces.add(pinnedPiece);
+            if (!BoardUtility.containsSquare(legalMoves, kingSquare)) {
+                Move pinnedPiece = BoardUtility.getPieceIfOne(board, legalMoves, color);
+                if (pinnedPiece != null && BoardUtility.numPieces(board, moveCalculator.getMovesForSquare(attackingPiece, checkMove.directionOffset)) == 1) pinnedPieces.add(pinnedPiece);
                 continue;
             }
 
@@ -232,32 +231,8 @@ public class ChessBoard {
         return check;
     }
 
-    private boolean containsSquare(List<Move> moves, Square target){
-        for (Move m : moves){
-            if (m.squarePos == target.getArrayPosition()) return true;
-        }
-
-        return false;
-    }
-
-    private Move getPiece(List<Move> moves, boolean color){
-        int num = 0;
-        Move pieceMove = null;
-
-        for (Move m : moves){
-            Square s = board[m.squarePos];
-            if (s.hasPiece() && s.getPiece().type != Piece.KING && s.getPiece().color == color) {
-                num++;
-                pieceMove = new Move(m.piecePos, m.squarePos, -m.directionOffset);
-            }
-        }
-
-        if (num == 1) return pieceMove;
-        else return null;
-    }
-
     public void generatePossibleMoves(int squarePosition){
-        List<Move> legalMoves = moveCalculator.getLegalMoves(this, isTurnToMove);
+        List<Move> legalMoves = moveCalculator.getLegalMoves(this, colorToMove);
         legalMoves.removeIf(m-> m.piecePos!=squarePosition);
 
         for (Move m : legalMoves){
@@ -268,6 +243,26 @@ public class ChessBoard {
             if (s.hasPiece()) s.setColor(Constants.TAKE_COLOR);
             else s.setPossibleMove(true);
         }
+    }
+
+    /**
+     * Loads board/values from FEN string
+     * @param fen FEN string to load
+     */
+    public void loadPosition(String fen){
+        LoadData boardData = FenUtility.loadPosition(fen);
+
+        this.board = boardData.boardRepresentation;
+        this.colorToMove = boardData.colorToMove;
+        this.whiteKingSquare = boardData.whiteKingSquare;
+        this.blackKingSquare = boardData.blackKingSquare;
+
+        if (!boardData.whiteCastleKing && board[7].hasPiece()) board[7].getPiece().hasMoved = true;
+        if (!boardData.whiteCastleQueen && board[0].hasPiece()) board[0].getPiece().hasMoved = true;
+        if (!boardData.blackCastleKing && board[63].hasPiece()) board[63].getPiece().hasMoved = true;
+        if (!boardData.blackCastleQueen && board[56].hasPiece()) board[56].getPiece().hasMoved = true;
+
+        this.numPly = boardData.plyCount;
     }
 
     public void highlightSquare(int squarePosition, Color color){
@@ -304,97 +299,16 @@ public class ChessBoard {
         return prevSquare != currentSquare && possibleMoves.containsKey(currentSquare);
     }
 
-    public boolean canMove(int squarePos){
-        return board[squarePos].hasPiece() && board[squarePos].getPiece().color == isTurnToMove;
+    public Square getSquare(int squarePos){
+        return board[squarePos];
     }
 
-    /**
-     * Initializes Square[] based on a given FEN string
-     * @param FEN Representation of the starting chess board using characters and numbers
-     */
-    private void initFEN(String FEN){
-        int rank = 7;
-        int file = 0;
-
-        for (char c : FEN.toCharArray()){
-            if (c == '/'){
-                file = 0;
-                rank--;
-                continue;
-            }
-
-            //If there is a number, initialize that many squares as empty
-            if (Character.isDigit(c)) file = handleDigit(Character.getNumericValue(c), rank, file);
-
-            //If there is a letter, initialize that square as the corresponding piece
-            if (Character.isAlphabetic(c)) file = handleLetter(c, rank, file);
-        }
-    }
-
-    private Transform generateTransform(int rank, int file){
-        return new Transform(new Vector2(squareSize * file, squareSize * rank), new Vector2(squareSize, squareSize));
-    }
-
-    private int handleDigit(int digit, int rank, int file){
-        for (int i = 0; i < digit; i++){
-            int idx = getArrayIndex(rank, file);
-            board[idx] = new Square(generateTransform(rank, file), idx);
-            file++;
-        }
-
-        return file;
-    }
-
-    private int handleLetter(char c, int rank, int file){
-        Piece p = piecesMap.get(c);
-        int idx = getArrayIndex(rank, file);
-        board[idx] = new Square(generateTransform(rank, file), idx).setPiece(Piece.copy(p));
-
-        if (p.type == Piece.KING) {
-            if (p.color) whiteKingSquare = board[idx];
-            else blackKingSquare = board[idx];
-        }
-
-        return file+1;
-    }
-
-    public static int getArrayIndex(int rank, int file){
-        return rank*8+file;
-    }
-
-    public static int[] getRankAndFile(int squarePosition){
-        int[] rankAndFile = new int[2];
-        rankAndFile[0] = squarePosition/8;
-        rankAndFile[1] = squarePosition - rankAndFile[0] * 8;
-        return rankAndFile;
-    }
-
-    private void initPiecesMap(){
-        piecesMap.put('k', new Piece(0, true));
-        piecesMap.put('q', new Piece(1, true));
-        piecesMap.put('b', new Piece(2, true));
-        piecesMap.put('n', new Piece(3, true));
-        piecesMap.put('r', new Piece(4, true));
-        piecesMap.put('p', new Piece(5, true));
-        piecesMap.put('K', new Piece(0, false));
-        piecesMap.put('Q', new Piece(1, false));
-        piecesMap.put('B', new Piece(2, false));
-        piecesMap.put('N', new Piece(3, false));
-        piecesMap.put('R', new Piece(4, false));
-        piecesMap.put('P', new Piece(5, false));
+    public Square getSquare(int rank, int file){
+        return board[BoardUtility.getArrayIndex(rank, file)];
     }
 
     public Square[] getSquares(){
         return board;
-    }
-
-    public List<Square> getSquares(boolean color){
-        List<Square> squaresForColor = new ArrayList<>();
-        for (Square s : board){
-            if (s.hasPiece() && s.getPiece().color == color) squaresForColor.add(s);
-        }
-
-        return squaresForColor;
     }
 
     public MoveCalculator getMoveCalculator(){
@@ -402,7 +316,7 @@ public class ChessBoard {
     }
 
     public boolean colorToMove(){
-        return isTurnToMove;
+        return colorToMove;
     }
 
     public int numPieces(int type, boolean color){
@@ -415,8 +329,18 @@ public class ChessBoard {
         return numPieces;
     }
 
+    public List<Integer> getPiecePosList(int pieceType, boolean color){
+        List<Integer> piecePosList = new ArrayList<>();
+
+        for (Square s : board){
+            if (s.hasPiece() && s.getPiece().type == pieceType && s.getPiece().color == color) piecePosList.add(s.getArrayPosition());
+        }
+
+        return piecePosList;
+    }
+
     public Move getMove(int prevPos, int newPos){
-        for (Move m : getMoveCalculator().getLegalMoves(this, isTurnToMove)){
+        for (Move m : getMoveCalculator().getLegalMoves(this, colorToMove)){
             if (m.piecePos == prevPos && m.squarePos == newPos) return m;
         }
 
