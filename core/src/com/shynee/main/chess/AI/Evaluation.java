@@ -7,11 +7,11 @@ import java.util.List;
 
 public class Evaluation {
 
-    private final static int pawnValue = 10;
-    private final static int knightValue = 30;
-    private final static int bishopValue = 30;
-    private final static int rookValue = 50;
-    private final static int queenValue = 90;
+    private final static int pawnValue = 100;
+    private final static int knightValue = 300;
+    private final static int bishopValue = 300;
+    private final static int rookValue = 500;
+    private final static int queenValue = 900;
 
     public static int evaluate(ChessBoard board){
         int whiteEval = countMaterial(board, true);

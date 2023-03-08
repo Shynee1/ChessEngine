@@ -9,26 +9,41 @@ public class Search {
 
     private ChessBoard board;
     private Move bestMoveInIteration;
+    private int numTranspositions;
 
     private final int positiveInfinity = 9999999;
     private final int negativeInfinity = -positiveInfinity;
 
+    private final TranspositionTable tt;
+
     public Search(ChessBoard board){
         this.board = board;
+        this.tt = new TranspositionTable(board, 64000);
     }
 
-    public Move startSearch(int depth){
-        search(depth, negativeInfinity, positiveInfinity, 0);
+    public Move startSearch(int targetDepth){
+        int finalEval = search(targetDepth, negativeInfinity, positiveInfinity, 0);
+        System.out.println(finalEval);
         return bestMoveInIteration;
     }
 
     private int search(int depth, int alpha, int beta, int plyFromRoot){
+        /*int t = tt.lookupEvaluation(depth, alpha, beta);
+        if (t != Integer.MIN_VALUE){
+            if (plyFromRoot == 0) bestMoveInIteration = tt.getCurrentMove();
+            numTranspositions++;
+            return t;
+        }
+
+         */
+
         if (depth == 0) {
             return quiescenceSearch(alpha, beta);
         }
 
         boolean color = board.colorToMove();
         List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
+        int hashFlag = tt.LOWER;
 
         if (legalMoves.isEmpty()){
             if (board.isWhiteCheck || board.isBlackCheck){
@@ -44,13 +59,17 @@ public class Search {
             board.unmakeMove(legalMove);
 
             if (eval >= beta) {
+                tt.storeEvaluation(depth, tt.UPPER, eval, legalMove);
                 return beta;
             }
 
             if (eval > alpha) {
                 alpha = eval;
+                hashFlag = tt.EXACT;
                 if (plyFromRoot == 0) this.bestMoveInIteration = legalMove;
             }
+
+            tt.storeEvaluation(depth, hashFlag, eval, legalMove);
         }
 
         return alpha;
@@ -64,6 +83,7 @@ public class Search {
 
         boolean color = board.colorToMove();
         List<Move> legalCaptures = board.getMoveCalculator().getLegalCaptures(board, color);
+        MoveOrdering.orderMoves(board, legalCaptures);
 
         for (Move move : legalCaptures) {
 

@@ -51,7 +51,7 @@ public class ChessScene extends Scene {
 
         GameObject aiPlayer2 = new GameObject("AiPLayer2");
         aiPlayer2.addComponent(new AIController(playerColor, board));
-        addGameObject(aiPlayer2);
+        //addGameObject(aiPlayer2);
 
 
     }

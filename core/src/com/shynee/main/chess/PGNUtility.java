@@ -7,11 +7,13 @@ public class PGNUtility {
     public static Move pgnToMove(ChessBoard board, String pgn, int num){
         boolean color = num % 2 == 1;
 
+        pgn = pgn.replace("+", "");
+
         if (pgn.equals("O-O")) return new Move(color ? board.whiteKingSquare.getArrayPosition() : board.blackKingSquare.getArrayPosition(), 0, 1).setCastle();
         if (pgn.equals("O-O-O")) return new Move(color ? board.whiteKingSquare.getArrayPosition() : board.blackKingSquare.getArrayPosition(), 0, -1).setCastle();
 
         char[] chars = pgn.toCharArray();
-        if (chars.length < 2) return null;
+        if (chars.length < 2 || Character.isDigit(chars[0])) return null;
         int charIdx = 0;
 
         int pieceType = 5;

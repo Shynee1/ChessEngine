@@ -2,6 +2,7 @@ package com.shynee.main.chess;
 
 import com.badlogic.gdx.graphics.Color;
 import com.shynee.main.Main;
+import com.shynee.main.chess.AI.Zobrist;
 import com.shynee.main.scenes.ChessScene;
 import com.shynee.main.utils.Constants;
 
@@ -27,6 +28,7 @@ public class ChessBoard {
     public final List<Move> checkingMoves;
     public final List<Move> blockingMoves;
 
+    public long zobristKey;
     public boolean gameRunning = false;
 
     public Square whiteKingSquare;
@@ -54,6 +56,8 @@ public class ChessBoard {
         this.blockingMoves = new ArrayList<>();
 
         this.moveCalculator = new MoveCalculator();
+
+        Zobrist.initializeKeys();
 
         loadPosition(FEN);
 
@@ -110,7 +114,6 @@ public class ChessBoard {
             System.out.println("checkmate");
             gameRunning = false;
         }
-
 
         this.colorToMove = !colorToMove;
 
@@ -173,6 +176,8 @@ public class ChessBoard {
 
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
+
+        this.zobristKey = Zobrist.generateKey(this);
 
         this.colorToMove = !colorToMove;
     }
@@ -263,6 +268,7 @@ public class ChessBoard {
         if (!boardData.blackCastleQueen && board[56].hasPiece()) board[56].getPiece().hasMoved = true;
 
         this.numPly = boardData.plyCount;
+        this.zobristKey = Zobrist.generateKey(this);
     }
 
     public void highlightSquare(int squarePosition, Color color){

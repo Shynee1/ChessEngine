@@ -8,8 +8,6 @@ import com.shynee.main.chess.BoardUtility;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.Main;
 import com.shynee.main.abstracts.Component;
-import com.shynee.main.chess.Move;
-import com.shynee.main.chess.PGNUtility;
 import com.shynee.main.utils.Constants;
 
 public class InputHandler extends Component {
@@ -20,7 +18,6 @@ public class InputHandler extends Component {
     private float mouseOffset;
     private boolean hasClicked;
     private int previousClickedSquarePos;
-
     public InputHandler(ChessBoard board){
         this.board = board;
         this.hasClicked = false;
