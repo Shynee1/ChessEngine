@@ -4,8 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.shynee.main.chess.BoardUtility;
-import com.shynee.main.chess.ChessBoard;
+import com.shynee.main.chess.*;
 import com.shynee.main.Main;
 import com.shynee.main.abstracts.Component;
 import com.shynee.main.utils.Constants;
@@ -13,13 +12,15 @@ import com.shynee.main.utils.Constants;
 public class InputHandler extends Component {
 
     private final ChessBoard board;
+    private final Book book;
     private final int squareSize = Constants.WORLD_HEIGHT/8;
 
     private float mouseOffset;
     private boolean hasClicked;
     private int previousClickedSquarePos;
-    public InputHandler(ChessBoard board){
+    public InputHandler(ChessBoard board, Book book){
         this.board = board;
+        this.book = book;
         this.hasClicked = false;
     }
 
@@ -61,6 +62,7 @@ public class InputHandler extends Component {
         }
 
         board.makeMove(board.getMove(previousClickedSquarePos, clickedSquare), false);
+        book.updateMoves(board.zobristKey);
     }
 
     private int worldToArray(Vector2 worldCoords){

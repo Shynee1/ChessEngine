@@ -59,7 +59,7 @@ public class ChessBoard {
 
         Zobrist.initializeKeys();
 
-        loadPosition("8/3k4/8/2p1p1p1/8/8/3K4/8 w - - 1");
+        loadPosition(FEN);
 
         moveCalculator.precomputeMoves(this);
 
@@ -115,6 +115,7 @@ public class ChessBoard {
             gameRunning = false;
         }
 
+        this.zobristKey = Zobrist.generateKey(this);
         this.colorToMove = !colorToMove;
 
         //if (!inSearch) System.out.println(FenUtility.savePosition(this));

@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
+import com.shynee.main.chess.Book;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.abstracts.Scene;
 import com.shynee.main.chess.PGNUtility;
@@ -30,6 +31,7 @@ public class ChessScene extends Scene {
         loadResources();
         this.camera = new OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
         ChessBoard board = new ChessBoard(FEN, playerColor);
+        Book book = new Book(board);
 
         super.start();
 
@@ -42,15 +44,15 @@ public class ChessScene extends Scene {
         addGameObject(boardUI);
 
         GameObject mouseInput = new GameObject("MouseInputHandler");
-        mouseInput.addComponent(new InputHandler(board));
+        mouseInput.addComponent(new InputHandler(board, book));
         addGameObject(mouseInput);
 
         GameObject aiPlayer = new GameObject("AiPLayer");
-        aiPlayer.addComponent(new AIController(!playerColor, board));
-        //addGameObject(aiPlayer);
+        aiPlayer.addComponent(new AIController(!playerColor, board, book));
+        addGameObject(aiPlayer);
 
         GameObject aiPlayer2 = new GameObject("AiPLayer2");
-        aiPlayer2.addComponent(new AIController(playerColor, board));
+        aiPlayer2.addComponent(new AIController(playerColor, board, book));
         //addGameObject(aiPlayer2);
 
 

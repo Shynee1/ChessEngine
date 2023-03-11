@@ -4,49 +4,58 @@ import java.util.List;
 
 public class PGNUtility {
 
-    public static Move pgnToMove(ChessBoard board, String pgn, int num){
-        boolean color = num % 2 == 1;
+    public static Move pgnToMove(ChessBoard board, String pgn){
+        boolean color = board.colorToMove();
 
-        pgn = pgn.replace("+", "");
+        pgn = pgn.replace("+", "").replace("-", "").replace("x", "").replace("#", "").replace("=", "");
+        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
+        for (Move move : legalMoves){
 
-        if (pgn.equals("O-O")) return new Move(color ? board.whiteKingSquare.getArrayPosition() : board.blackKingSquare.getArrayPosition(), 0, 1).setCastle();
-        if (pgn.equals("O-O-O")) return new Move(color ? board.whiteKingSquare.getArrayPosition() : board.blackKingSquare.getArrayPosition(), 0, -1).setCastle();
-
-        char[] chars = pgn.toCharArray();
-        if (chars.length < 2 || Character.isDigit(chars[0])) return null;
-        int charIdx = 0;
-
-        int pieceType = 5;
-        if (Character.isUpperCase(chars[charIdx])){
-            switch(chars[charIdx]){
-                case 'Q' -> pieceType = 1;
-                case 'B' -> pieceType = 2;
-                case 'N' -> pieceType = 3;
-                case 'R' -> pieceType = 4;
-                case 'K' -> pieceType = 0;
+            if (pgn.equals("OO")){
+                if (move.isCastle && move.directionOffset == 1) return move;
+                continue;
             }
-            charIdx++;
-        }
+            if (pgn.equals("OOO")){
+                if (move.isCastle && move.directionOffset == -1) return move;
+                continue;
+            }
 
-        if (chars[charIdx] == 'd') charIdx++;
+            char[] chars = pgn.toCharArray();
+            if (chars.length < 2 || Character.isDigit(chars[0])) return null;
 
-        boolean isTake = false;
-        if (chars[charIdx] == 'x'){
-            isTake = true;
-            charIdx++;
-        }
+            int file = (chars[chars.length-2]-97);
+            int rank = Character.getNumericValue(chars[chars.length-1])-1;
+            int pieceType = -1;
+            int startRank = -1;
+            int startFile = -1;
 
-        int file = (chars[charIdx]-97);
-        charIdx++;
+            //Pawn
+            if (Character.isLowerCase(chars[0]) && Character.isAlphabetic(chars[0])){
+                if (pgn.length() == 3) startFile = (chars[0]-97);
+                pieceType = Piece.PAWN;
+            } else if(Character.isUpperCase(chars[0])){
+                switch(chars[0]){
+                    case 'Q' -> pieceType = Piece.QUEEN;
+                    case 'B' -> pieceType = Piece.BISHOP;
+                    case 'N' -> pieceType = Piece.KNIGHT;
+                    case 'R' -> pieceType = Piece.ROOK;
+                    case 'K' -> pieceType = Piece.KING;
+                }
 
-        int rank = Character.getNumericValue(chars[charIdx]);
+                if (pgn.length() == 4){
+                    if (Character.isAlphabetic(chars[1])) startFile = (chars[1]-97);
+                    else startRank = Character.getNumericValue(chars[1])-1;
+                }
+            }
 
-        List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, false);
-        legalMoves.addAll(board.getMoveCalculator().getLegalMoves(board, true));
+            if (BoardUtility.getArrayIndex(rank, file) == move.squarePos && board.getSquare(move.piecePos).getPiece().type == pieceType){
+                int[] rf = BoardUtility.getRankAndFile(move.piecePos);
 
-        for (Move m : legalMoves){
-            if (BoardUtility.getArrayIndex(rank, file) == m.squarePos && board.getSquare(m.piecePos).getPiece().type == pieceType && board.getSquare(m.squarePos).hasPiece() == isTake)
-                return m;
+                if (startFile == -1 && startRank == -1) return move;
+                else if (startFile != -1 && rf[1] == startFile) return move;
+                else if (startRank != -1 && rf[0] == startRank) return move;
+            }
+
         }
 
         return null;

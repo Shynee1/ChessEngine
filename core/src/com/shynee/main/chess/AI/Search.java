@@ -23,7 +23,6 @@ public class Search {
 
     public Move startSearch(int targetDepth){
         int finalEval = search(targetDepth, negativeInfinity, positiveInfinity, 0);
-        System.out.println(finalEval);
         return bestMoveInIteration;
     }
 
