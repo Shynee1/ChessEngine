@@ -59,7 +59,7 @@ public class ChessBoard {
 
         Zobrist.initializeKeys();
 
-        loadPosition(FEN);
+        loadPosition("8/3k4/8/2p1p1p1/8/8/3K4/8 w - - 1");
 
         moveCalculator.precomputeMoves(this);
 

@@ -40,7 +40,7 @@ public class MoveCalculator {
 
     }
 
-    public List<Move> getLegalMoves(ChessBoard chessBoard, boolean color, boolean inIntersection, boolean includeColor){
+    public List<Move> getLegalMoves(ChessBoard chessBoard, boolean color, boolean inIntersection, boolean isKing, boolean includeColor){
         List<Move> legalMoves = new ArrayList<>();
         this.board = chessBoard;
 
@@ -54,7 +54,7 @@ public class MoveCalculator {
             if (s.getPiece().color != color) continue;
 
             List<Move> legals;
-            if (inIntersection) legals = getLegalMovesForSquare(s, true, includeColor);
+            if (inIntersection) legals = getLegalMovesForSquare(s, isKing, includeColor);
             else legals = getLegalMovesForSquare(s, s.getPiece().color?isWhiteChecked:isBlackChecked, board.checkingMoves, board.pinnedPieces);
 
             legalMoves.addAll(legals);
@@ -71,7 +71,7 @@ public class MoveCalculator {
     }
 
     public List<Move> getLegalMoves(ChessBoard board, boolean color){
-        return getLegalMoves(board, color, false, false);
+        return getLegalMoves(board, color, false, false, false);
     }
 
     public List<Move> getLegalCaptures(ChessBoard board, boolean color){
@@ -84,16 +84,16 @@ public class MoveCalculator {
         List<Move> possibleBlocks = new ArrayList<>();
 
         for (Move m : blockingMoves){
-            possibleBlocks.addAll(findLegalMoveIntersection(squares[m.squarePos], color, false, true));
+            possibleBlocks.addAll(findLegalMoveIntersection(squares[m.squarePos], color, false, true, false));
         }
         return possibleBlocks;
     }
 
 
-    public List<Move> findLegalMoveIntersection(Square square, boolean color, boolean includeColor, boolean forBlocks) {
+    public List<Move> findLegalMoveIntersection(Square square, boolean color, boolean includeColor, boolean forBlocks, boolean isKing) {
         List<Move> legalMoveIntersection = new ArrayList<>();
 
-        for (Move move : getLegalMoves(board, color, true, includeColor)){
+        for (Move move : getLegalMoves(board, color, true, isKing, includeColor)){
             if (forBlocks && squares[move.piecePos].getPiece().type == Piece.KING) continue;
             if (move.squarePos == square.getArrayPosition()) legalMoveIntersection.add(move);
         }
@@ -131,7 +131,7 @@ public class MoveCalculator {
         if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle());
 
         for (Move m : getLegalMovesForSquare(kingSquare, false, false)){
-            if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false).isEmpty()) legalMoves.add(m);
+            if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false, true).isEmpty()) legalMoves.add(m);
             if (!isColorChecked) continue;
             if (containsMove(m, checkingMoves)) legalMoves.remove(m);
         }
@@ -159,11 +159,11 @@ public class MoveCalculator {
 
         if (kingSide){
             for (int i = kingSquare.getArrayPosition()+1; i < kingSquare.getArrayPosition() + addRookIdx; i++){
-                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false, true).isEmpty()) return false;
             }
         } else {
             for (int i = kingSquare.getArrayPosition()-1; i > kingSquare.getArrayPosition() + addRookIdx; i--){
-                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false).isEmpty()) return false;
+                if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false, true).isEmpty()) return false;
             }
         }
 
@@ -198,7 +198,7 @@ public class MoveCalculator {
         return legalMoves;
     }
 
-    public List<Move> getLegalMovesForSquare(Square square, boolean inIntersection, boolean includeColor){
+    public List<Move> getLegalMovesForSquare(Square square, boolean inKingIntersection, boolean includeColor){
         List<Move> pseudoMovesForSquare = pseudoMoves.get(square);
         List<Move> legalMoves = new ArrayList<>();
 
@@ -213,9 +213,9 @@ public class MoveCalculator {
 
             if (square.getPiece().type == Piece.PAWN){
                 if (Math.abs(m.directionOffset) != 8) {
-                    if (!s.hasPiece() && !inIntersection) continue;
+                    if (!s.hasPiece() && !inKingIntersection) continue;
                 } else {
-                    if (squares[m.squarePos].hasPiece() || inIntersection) continue;
+                    if (squares[m.squarePos].hasPiece() || inKingIntersection) continue;
 
                     int firstSquarePos = square.getPiece().color ? m.squarePos-8 : m.squarePos+8;
                     if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece())) continue;
