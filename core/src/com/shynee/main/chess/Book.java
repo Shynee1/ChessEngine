@@ -1,9 +1,8 @@
 package com.shynee.main.chess;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import com.google.gson.Gson;
+
+import java.io.*;
 import java.util.*;
 
 public class Book {
@@ -24,28 +23,36 @@ public class Book {
     private final Stack<Move> lastMoves = new Stack<>();
     private final Random random = new Random();
     private final ChessBoard board;
+    private final Gson gson;
 
     public Book(ChessBoard board){
-        String[] book = readBook().split("\n");
         this.board = board;
+        this.gson = new Gson();
+
+        File file = new File("games/book.txt");
+        if (file.exists()) loadBook(file);
+        else createBook(file);
+    }
+
+    private void createBook(File file){
+        String[] book = readBook(new File("games/games.txt")).split("\n");
+        StringBuilder zobristString = new StringBuilder();
 
         for (String line : book){
-            Queue<BookElement> zobristQueue = new LinkedList<>();
-
             String[] moves = line.split(" ");
+            Queue<BookElement> bookQueue = new LinkedList<>();
 
             int iterations = 0;
             for (String move : moves){
-                if (iterations > 7) break;
+                if (iterations > 9) break;
 
                 Move boardMove = PGNUtility.pgnToMove(board, move);
-                if (boardMove == null){
-                    System.out.println(FenUtility.savePosition(board));
-                    throw new RuntimeException();
-                }
+                if (boardMove == null) continue;
                 board.makeMove(boardMove, true);
                 lastMoves.push(boardMove);
-                zobristQueue.add(new BookElement(board.zobristKey, move, boardMove));
+
+                BookElement element = new BookElement(board.zobristKey, move, boardMove);
+                bookQueue.add(element);
 
                 iterations++;
 
@@ -56,16 +63,34 @@ public class Book {
                 board.unmakeMove(m);
             }
 
-            zobristBook.add(zobristQueue);
+            zobristBook.add(bookQueue);
+        }
+
+        zobristString.append(gson.toJson(zobristBook));
+
+        try {
+            file.createNewFile();
+            FileWriter writer = new FileWriter(file);
+            writer.write(zobristString.toString());
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void loadBook(File file){
+        String json = readBook(file);
+        BookElement[][] bookElements = gson.fromJson(json, BookElement[][].class);
+
+        for (BookElement[] bookQueue : bookElements){
+            Queue<BookElement> queue = new LinkedList<>();
+            Collections.addAll(queue, bookQueue);
+            zobristBook.add(queue);
         }
     }
 
     public void updateMoves(long newZobrist){
-        zobristBook.removeIf(q -> q.peek() == null || q.peek().zobristKey != newZobrist);
-
-        for (Queue<BookElement> qu : zobristBook){
-            qu.remove();
-        }
+        zobristBook.removeIf(q -> q.peek() == null || q.poll().zobristKey != newZobrist);
     }
 
     public Move getRandomMove(){
@@ -75,9 +100,8 @@ public class Book {
         return zobristBook.get(pos).poll().move;
     }
 
-    private String readBook(){
+    private String readBook(File file){
         try {
-            File file = new File("games/games.txt");
             BufferedReader reader = new BufferedReader(new FileReader(file));
             StringBuilder string = new StringBuilder();
 
