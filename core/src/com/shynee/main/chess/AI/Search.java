@@ -9,7 +9,13 @@ public class Search {
 
     private ChessBoard board;
     private Move bestMoveInIteration;
+    private Move bestMove = null;
+
+    private int bestEvalInIteration;
     private int numTranspositions;
+    private int numPositions;
+
+    private boolean abortSearch;
 
     private final int positiveInfinity = 9999999;
     private final int negativeInfinity = -positiveInfinity;
@@ -22,19 +28,63 @@ public class Search {
     }
 
     public Move startSearch(int targetDepth){
-        int finalEval = search(targetDepth, negativeInfinity, positiveInfinity, 0);
-        return bestMoveInIteration;
+        numTranspositions = 0;
+        numPositions = 0;
+        abortSearch = false;
+        boolean isIterative = true;
+
+        int bestEval = 0;
+        int finalDepth = 0;
+
+        if (isIterative){
+            for (int i = 1; i <= targetDepth; i++){
+                search(i, negativeInfinity, positiveInfinity, 0);
+
+                if (abortSearch) break;
+
+                bestMove = bestMoveInIteration;
+                bestEval = bestEvalInIteration;
+                finalDepth = i;
+
+                if (isMateScore(bestEval)){
+                    break;
+                }
+            }
+        }else {
+            search(targetDepth, negativeInfinity, positiveInfinity, 0);
+        }
+
+        System.out.println("numPly: " + board.numPly);
+        System.out.println("depth: " + finalDepth);
+        System.out.println("eval: " + bestEval);
+        System.out.println("transPos: " + numTranspositions);
+        System.out.println("pos: " + numPositions);
+
+        return bestMove;
     }
 
     private int search(int depth, int alpha, int beta, int plyFromRoot){
-        /*int t = tt.lookupEvaluation(depth, alpha, beta);
+        numPositions++;
+        if (abortSearch) return 0;
+
+        if (plyFromRoot > 0){
+
+            //Any mate we find cannot be better than one we already found
+            alpha = Math.max(alpha, negativeInfinity+plyFromRoot);
+            beta = Math.min(beta, positiveInfinity-plyFromRoot);
+            if (alpha>=beta)
+                return alpha;
+        }
+
+        int t = tt.lookupEvaluation(depth, alpha, beta);
         if (t != Integer.MIN_VALUE){
-            if (plyFromRoot == 0) bestMoveInIteration = tt.getCurrentMove();
+            if (plyFromRoot == 0) {
+                bestMoveInIteration = tt.getCurrentMove();
+                bestEvalInIteration = tt.getCurrentEval();
+            }
             numTranspositions++;
             return t;
         }
-
-         */
 
         if (depth == 0) {
             return quiescenceSearch(alpha, beta);
@@ -42,10 +92,10 @@ public class Search {
 
         boolean color = board.colorToMove();
         List<Move> legalMoves = board.getMoveCalculator().getLegalMoves(board, color);
-        int hashFlag = tt.LOWER;
+        int hashFlag = TranspositionTable.UPPER;
 
         if (legalMoves.isEmpty()){
-            if (board.isWhiteCheck || board.isBlackCheck){
+            if (board.isWhiteCheck || board.isBlackCheck){ //Checkmate
                 return negativeInfinity+plyFromRoot;
             }
             return 0; //Stalemate
@@ -58,14 +108,17 @@ public class Search {
             board.unmakeMove(legalMove);
 
             if (eval >= beta) {
-                tt.storeEvaluation(depth, tt.UPPER, eval, legalMove);
+                tt.storeEvaluation(depth, TranspositionTable.LOWER, eval, legalMove);
                 return beta;
             }
 
             if (eval > alpha) {
                 alpha = eval;
-                hashFlag = tt.EXACT;
-                if (plyFromRoot == 0) this.bestMoveInIteration = legalMove;
+                hashFlag = TranspositionTable.EXACT;
+                if (plyFromRoot == 0) {
+                    this.bestMoveInIteration = legalMove;
+                    this.bestEvalInIteration = eval;
+                }
             }
 
             tt.storeEvaluation(depth, hashFlag, eval, legalMove);
@@ -96,5 +149,14 @@ public class Search {
 
         return alpha;
     }
+
+    public boolean isMateScore(int score){
+        return Math.abs(score) + 1000 > positiveInfinity;
+    }
+
+    public void abortSearch(){
+        abortSearch = true;
+    }
+
 
 }

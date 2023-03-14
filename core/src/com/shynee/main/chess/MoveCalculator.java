@@ -12,6 +12,7 @@ public class MoveCalculator {
     private List<Move> possibleMoves;
 
     private boolean primaryPieceColor;
+    private boolean playerColor;
     private int squarePosition;
     private Square square;
 
@@ -19,10 +20,11 @@ public class MoveCalculator {
         initDirectionOffsets();
     }
 
-    public void precomputeMoves(ChessBoard chessBoard){
+    public void precomputeMoves(ChessBoard chessBoard, boolean playerColor){
         this.pseudoMoves = new HashMap<>();
         this.board = chessBoard;
         this.squares = chessBoard.getSquares();
+        this.playerColor = playerColor;
 
         for (Square square : squares) {
             if (square.hasPiece()) {
@@ -34,6 +36,11 @@ public class MoveCalculator {
     public void recomputeMoves(ChessBoard chessBoard, Square previousSquare, Square newSquare){
         this.squares = chessBoard.getSquares();
         this.board = chessBoard;
+
+        if (newSquare.getPiece() == null){
+            System.out.println(FenUtility.savePosition(board));
+            System.out.println(previousSquare.getArrayPosition()+":"+ newSquare.getArrayPosition());
+        }
 
         pseudoMoves.remove(previousSquare);
         pseudoMoves.put(newSquare, calculateMove(newSquare));
@@ -86,6 +93,7 @@ public class MoveCalculator {
         for (Move m : blockingMoves){
             possibleBlocks.addAll(findLegalMoveIntersection(squares[m.squarePos], color, false, true, false));
         }
+
         return possibleBlocks;
     }
 
@@ -187,7 +195,6 @@ public class MoveCalculator {
         List<Move> legalMoves = new ArrayList<>();
 
         if (square.hasKing()) return getLegalKingMoves(square, isColorChecked, checkingMoves);
-
         if (isColorChecked) return legalMoves;
 
         Move pinnedPiece = containsSquare(pinnedPieces, square);
@@ -207,8 +214,6 @@ public class MoveCalculator {
         for (Move m : pseudoMovesForSquare){
             Square s = squares[m.squarePos];
 
-            if (!square.getPiece().hasMoved) m.setFirstMove();
-
             if (invalidDirections.contains(m.directionOffset)) continue;
 
             if (square.getPiece().type == Piece.PAWN){
@@ -218,7 +223,7 @@ public class MoveCalculator {
                     if (squares[m.squarePos].hasPiece() || inKingIntersection) continue;
 
                     int firstSquarePos = square.getPiece().color ? m.squarePos-8 : m.squarePos+8;
-                    if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece())) continue;
+                    if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece() || square.getPiece().hasMoved)) continue;
                 }
             }
 
@@ -255,21 +260,23 @@ public class MoveCalculator {
     }
 
     private void calculatePawnMove(int directionOffset) {
-        if (!primaryPieceColor) directionOffset = -directionOffset;
+        if (primaryPieceColor != playerColor) directionOffset = -directionOffset;
 
         int newPos = squarePosition + directionOffset;
         Piece pawn = square.getPiece();
 
         if (!isValid(squarePosition, newPos, Piece.PAWN)) return;
 
-        if (!pawn.hasMoved && Math.abs(directionOffset) == 8 && isValid(squarePosition, newPos+directionOffset, Piece.PAWN)) {
+        int[] rf = BoardUtility.getRankAndFile(squarePosition);
+        int pos = pawn.color ? 1 : 6;
+        if (rf[0] == pos && Math.abs(directionOffset) == 8 && isValid(squarePosition, newPos+directionOffset, Piece.PAWN)) {
             //Add square 2 spaces ahead
             possibleMoves.add(new Move(squarePosition,newPos+directionOffset, directionOffset));
         }
 
         Move pawnMove = new Move(squarePosition, newPos, directionOffset);
 
-        int promotionSquare = primaryPieceColor ? 7 : 0;
+        int promotionSquare = primaryPieceColor == playerColor ? 7 : 0;
         if (squares[newPos].getTransform().position.y/90 == promotionSquare) pawnMove.setPromotion();
 
         possibleMoves.add(pawnMove);

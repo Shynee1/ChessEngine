@@ -3,8 +3,10 @@ package com.shynee.main.chess;
 import com.badlogic.gdx.math.Vector2;
 import com.shynee.main.utils.Transform;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
+import static com.shynee.main.utils.Constants.MOVE_COLOR;
 import static com.shynee.main.utils.Constants.SQUARE_SIZE;
 
 /*
@@ -33,7 +35,7 @@ public class FenUtility {
      * @param fen FEN string of board
      * @return Custom LoadData with square[] and boolean values
      */
-    public static LoadData loadPosition(String fen){
+    public static LoadData loadPosition(String fen, boolean playerColor){
 
         String[] args = fen.split(" ");
         if (args.length < 2) throw new RuntimeException("Incorrect FEN loaded");
@@ -45,6 +47,7 @@ public class FenUtility {
         int file = 0;
 
         for (char c : args[0].toCharArray()) {
+
             if (c == '/') {
                 file = 0;
                 rank--;
@@ -87,6 +90,16 @@ public class FenUtility {
         lData.plyCount = args.length > 4 ? Integer.parseInt(args[4]) : 0;
 
         return lData;
+    }
+
+    private static Square[] reverseArray(Square[] array){
+        Square[] newArr = new Square[array.length];
+        int n = array.length;
+        for (Square square : array) {
+            newArr[n - 1] = square;
+            n--;
+        }
+        return newArr;
     }
 
     private static Transform generateTransform(int rank, int file){

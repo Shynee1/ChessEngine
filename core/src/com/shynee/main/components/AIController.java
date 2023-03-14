@@ -18,7 +18,6 @@ public class AIController extends Component {
     private final Search search;
     private final Book book;
 
-
     public AIController(boolean aiColor, ChessBoard board, Book book){
         this.color = aiColor;
         this.board = board;
@@ -34,13 +33,33 @@ public class AIController extends Component {
     @Override
     public void update(float dt, SpriteBatch batch) {
         if (board.colorToMove() != color || !board.gameRunning) return;
-        Move bestMove;
+        Move bestMove = null;
 
         bestMove = book.getRandomMove();
-        if (bestMove == null) bestMove = search.startSearch(4);
+        if (bestMove == null) {
+            startSearchTimer();
+            bestMove = search.startSearch(30);
+        }
         if (bestMove != null) board.makeMove(bestMove, false);
 
         book.updateMoves(board.zobristKey);
+    }
+
+    public void startSearchTimer(){
+        Thread thread = new Thread(() -> {
+            boolean abort = false;
+            long startTime = System.currentTimeMillis();
+            while (!abort){
+                long timeNow = System.currentTimeMillis();
+                float elapsedSeconds = (float)((timeNow - startTime)/1000);
+
+                if (elapsedSeconds >= 1f) {
+                    search.abortSearch();
+                    abort = true;
+                }
+            }
+        });
+        thread.start();
     }
 
     private Move getRandomMove(){
@@ -51,15 +70,4 @@ public class AIController extends Component {
 
         return legals.get(random.nextInt(legals.size()));
     }
-
-
-
-
-
-
-
-
-
-
-
 }

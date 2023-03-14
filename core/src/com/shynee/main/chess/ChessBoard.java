@@ -1,9 +1,7 @@
 package com.shynee.main.chess;
 
 import com.badlogic.gdx.graphics.Color;
-import com.shynee.main.Main;
 import com.shynee.main.chess.AI.Zobrist;
-import com.shynee.main.scenes.ChessScene;
 import com.shynee.main.utils.Constants;
 
 import java.util.ArrayList;
@@ -18,7 +16,7 @@ public class ChessBoard {
     private final HashMap<Square, Move> possibleMoves;
 
     private final Stack<Piece> captures;
-    public int numPly = 0;
+    private final Stack<Long> boardHistory;
 
     private final MoveCalculator moveCalculator;
 
@@ -30,6 +28,10 @@ public class ChessBoard {
 
     public long zobristKey;
     public boolean gameRunning = false;
+    private boolean playerColor;
+
+    public int numPly = 0;
+    public int numPlyForDraw = 0;
 
     public Square whiteKingSquare;
     public boolean isWhiteCheck;
@@ -41,7 +43,8 @@ public class ChessBoard {
 
     public ChessBoard(String FEN, boolean playerColor){
         this.board = new Square[64];
-        this.colorToMove = playerColor;
+        this.colorToMove = true;
+        this.playerColor = playerColor;
 
         this.isWhiteCheck = false;
         this.isBlackCheck = false;
@@ -49,6 +52,7 @@ public class ChessBoard {
         this.possibleMoves = new HashMap<>();
 
         this.captures = new Stack<>();
+        this.boardHistory = new Stack<>();
 
         this.coloredSquares = new ArrayList<>();
         this.pinnedPieces = new ArrayList<>();
@@ -59,9 +63,9 @@ public class ChessBoard {
 
         Zobrist.initializeKeys();
 
-        loadPosition(FEN);
+        loadPosition(FEN, playerColor);
 
-        moveCalculator.precomputeMoves(this);
+        moveCalculator.precomputeMoves(this, playerColor);
 
         this.gameRunning = true;
     }
@@ -75,9 +79,8 @@ public class ChessBoard {
         checkingMoves.clear();
         blockingMoves.clear();
 
-        previousSquare.getPiece().hasMoved = true;
-
         numPly++;
+        numPlyForDraw++;
 
         if (move.isCastle) {
             newSquare = handleCastle(previousSquare, move.directionOffset);
@@ -105,17 +108,21 @@ public class ChessBoard {
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
 
-        if (!inSearch && numPly == 100){
-            System.out.println("draw by move counter");
-            gameRunning = false;
-        }
+        if (!inSearch) newSquare.getPiece().hasMoved = true;
 
         if (!inSearch && ((isWhiteCheck && moveCalculator.getLegalMoves(this, true).isEmpty() || (isBlackCheck && moveCalculator.getLegalMoves(this, false).isEmpty())))){
             System.out.println("checkmate");
             gameRunning = false;
         }
 
+        if (!inSearch && numPlyForDraw == 50){
+            System.out.println("draw by move counter");
+            gameRunning = false;
+        }
+
         this.zobristKey = Zobrist.generateKey(this);
+        boardHistory.push(zobristKey);
+
         this.colorToMove = !colorToMove;
 
         //if (!inSearch) System.out.println(FenUtility.savePosition(this));
@@ -130,9 +137,9 @@ public class ChessBoard {
         checkingMoves.clear();
         blockingMoves.clear();
 
-        if (move.isFirstMove && !move.isCastle) newSquare.getPiece().hasMoved = false;
-
         Piece lastCapture = captures.pop();
+        boardHistory.pop();
+
         numPly--;
 
         if (newSquare.hasKing() && !move.isCastle){
@@ -255,8 +262,8 @@ public class ChessBoard {
      * Loads board/values from FEN string
      * @param fen FEN string to load
      */
-    public void loadPosition(String fen){
-        LoadData boardData = FenUtility.loadPosition(fen);
+    public void loadPosition(String fen, boolean color){
+        LoadData boardData = FenUtility.loadPosition(fen, color);
 
         this.board = boardData.boardRepresentation;
         this.colorToMove = boardData.colorToMove;
@@ -352,6 +359,10 @@ public class ChessBoard {
         }
 
         return null;
+    }
+
+    public boolean isRepeatPosition(long zobristKey){
+        return boardHistory.contains(zobristKey);
     }
 
 

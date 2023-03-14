@@ -97,7 +97,10 @@ public class Book {
         if (zobristBook.size() == 0) return null;
 
         int pos = zobristBook.size() == 1 ? 0 : random.nextInt(zobristBook.size()-1);
-        return zobristBook.get(pos).poll().move;
+        BookElement element = zobristBook.get(pos).poll();
+        if (element == null) return null;
+
+        return element.move;
     }
 
     private String readBook(File file){
