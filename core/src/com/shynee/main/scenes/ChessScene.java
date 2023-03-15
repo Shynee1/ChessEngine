@@ -30,7 +30,7 @@ public class ChessScene extends Scene {
     public void start(){
         loadResources();
         this.camera = new OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-        ChessBoard board = new ChessBoard(FEN, playerColor);
+        ChessBoard board = new ChessBoard("3r4/8/3k4/8/8/3K4/8/8 w - - 1", playerColor);
         Book book = new Book(board);
 
         super.start();

@@ -53,7 +53,7 @@ public class AIController extends Component {
                 long timeNow = System.currentTimeMillis();
                 float elapsedSeconds = (float)((timeNow - startTime)/1000);
 
-                if (elapsedSeconds >= 1f) {
+                if (elapsedSeconds >= 1.5f) {
                     search.abortSearch();
                     abort = true;
                 }

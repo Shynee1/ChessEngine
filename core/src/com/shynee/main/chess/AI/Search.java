@@ -19,6 +19,7 @@ public class Search {
 
     private final int positiveInfinity = 9999999;
     private final int negativeInfinity = -positiveInfinity;
+    private final int mateScore = 100000;
 
     private final TranspositionTable tt;
 
@@ -36,6 +37,8 @@ public class Search {
         int bestEval = 0;
         int finalDepth = 0;
 
+        tt.clear();
+
         if (isIterative){
             for (int i = 1; i <= targetDepth; i++){
                 search(i, negativeInfinity, positiveInfinity, 0);
@@ -46,7 +49,7 @@ public class Search {
                 bestEval = bestEvalInIteration;
                 finalDepth = i;
 
-                if (isMateScore(bestEval)){
+                if (isMateScore(bestEval) && finalDepth > 2){
                     break;
                 }
             }
@@ -54,7 +57,6 @@ public class Search {
             search(targetDepth, negativeInfinity, positiveInfinity, 0);
         }
 
-        System.out.println("numPly: " + board.numPly);
         System.out.println("depth: " + finalDepth);
         System.out.println("eval: " + bestEval);
         System.out.println("transPos: " + numTranspositions);
@@ -70,8 +72,8 @@ public class Search {
         if (plyFromRoot > 0){
 
             //Any mate we find cannot be better than one we already found
-            alpha = Math.max(alpha, negativeInfinity+plyFromRoot);
-            beta = Math.min(beta, positiveInfinity-plyFromRoot);
+            alpha = Math.max(alpha, -mateScore+plyFromRoot);
+            beta = Math.min(beta, mateScore-plyFromRoot);
             if (alpha>=beta)
                 return alpha;
         }
@@ -96,7 +98,7 @@ public class Search {
 
         if (legalMoves.isEmpty()){
             if (board.isWhiteCheck || board.isBlackCheck){ //Checkmate
-                return negativeInfinity+plyFromRoot;
+                return -1*(mateScore-plyFromRoot);
             }
             return 0; //Stalemate
         }
@@ -151,7 +153,7 @@ public class Search {
     }
 
     public boolean isMateScore(int score){
-        return Math.abs(score) + 1000 > positiveInfinity;
+        return Math.abs(score) + 1000 > mateScore;
     }
 
     public void abortSearch(){
