@@ -3,9 +3,8 @@
 A simple Chess Engine built from scratch using Java.
 
 Features:
-- Fully functioning Chess engine to play against
+- Functioning Chess engine to play against
 - Real time evaluation and search depth information
-- Play white or black
 
 Project Information:
 - All rendering/input handling is done with LibGDX.
