@@ -33,9 +33,10 @@ public class AIController extends Component {
     @Override
     public void update(float dt, SpriteBatch batch) {
         if (board.colorToMove() != color || !board.gameRunning) return;
+
         Move bestMove = null;
 
-        bestMove = book.getRandomMove();
+        bestMove = book.getRandomMove(color);
         if (bestMove == null) {
             startSearchTimer();
             bestMove = search.startSearch(30);

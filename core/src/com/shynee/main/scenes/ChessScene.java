@@ -23,14 +23,14 @@ public class ChessScene extends Scene {
     public ChessScene(String FEN, boolean color){
         super();
         this.FEN = FEN;
-        this.playerColor = color;
+        this.playerColor = true;
     }
 
     @Override
     public void start(){
         loadResources();
         this.camera = new OrthographicCamera(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-        ChessBoard board = new ChessBoard("3r4/8/3k4/8/8/3K4/8/8 w - - 1", playerColor);
+        ChessBoard board = new ChessBoard(FEN, playerColor);
         Book book = new Book(board);
 
         super.start();
@@ -49,7 +49,7 @@ public class ChessScene extends Scene {
 
         GameObject aiPlayer = new GameObject("AiPLayer");
         aiPlayer.addComponent(new AIController(!playerColor, board, book));
-        addGameObject(aiPlayer);
+        //addGameObject(aiPlayer);
 
         GameObject aiPlayer2 = new GameObject("AiPLayer2");
         aiPlayer2.addComponent(new AIController(playerColor, board, book));

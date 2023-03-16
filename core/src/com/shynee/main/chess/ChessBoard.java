@@ -28,7 +28,7 @@ public class ChessBoard {
 
     public long zobristKey;
     public boolean gameRunning = false;
-    private boolean playerColor;
+    public boolean playerColor;
 
     public int numPly = 0;
     public int numPlyForDraw = 0;
@@ -121,14 +121,26 @@ public class ChessBoard {
         }
 
         this.zobristKey = Zobrist.generateKey(this);
-        boardHistory.push(zobristKey);
+        if (!inSearch && isRepeatPosition(zobristKey)){
+            System.out.println("Draw by repetition");
+            gameRunning = false;
+        }
 
         this.colorToMove = !colorToMove;
+
+        if (!inSearch){
+            if (newSquare.getPiece().type == Piece.PAWN || captures.peek() != null){
+                numPlyForDraw = 0;
+                boardHistory.clear();
+            } else{
+                boardHistory.push(zobristKey);
+            }
+        }
 
         //if (!inSearch) System.out.println(FenUtility.savePosition(this));
     }
 
-    public void unmakeMove(Move move){
+    public void unmakeMove(Move move, boolean inSearch){
         Square startSquare = board[move.piecePos];
         Square newSquare = board[move.squarePos];
 
@@ -138,7 +150,6 @@ public class ChessBoard {
         blockingMoves.clear();
 
         Piece lastCapture = captures.pop();
-        boardHistory.pop();
 
         numPly--;
 
@@ -188,6 +199,10 @@ public class ChessBoard {
         this.zobristKey = Zobrist.generateKey(this);
 
         this.colorToMove = !colorToMove;
+
+        if (!inSearch && boardHistory.size() > 0) {
+            boardHistory.pop ();
+        }
     }
 
     private Square handleCastle(Square kingSquare, int directionOffset){

@@ -1,5 +1,6 @@
 package com.shynee.main.chess.AI;
 
+import com.badlogic.gdx.graphics.Color;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.chess.Square;
 

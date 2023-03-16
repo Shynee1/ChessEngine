@@ -67,12 +67,6 @@ public class MoveCalculator {
             legalMoves.addAll(legals);
         }
 
-        for (Move m : legalMoves){
-            if (squares[m.piecePos].getPiece() == null) {
-                System.out.println("null");
-            }
-        }
-
         return legalMoves;
 
     }
@@ -222,7 +216,7 @@ public class MoveCalculator {
                 } else {
                     if (squares[m.squarePos].hasPiece() || inKingIntersection) continue;
 
-                    int firstSquarePos = square.getPiece().color ? m.squarePos-8 : m.squarePos+8;
+                    int firstSquarePos = square.getPiece().color == playerColor ? m.squarePos-8 : m.squarePos+8;
                     if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece() || square.getPiece().hasMoved)) continue;
                 }
             }
@@ -268,7 +262,7 @@ public class MoveCalculator {
         if (!isValid(squarePosition, newPos, Piece.PAWN)) return;
 
         int[] rf = BoardUtility.getRankAndFile(squarePosition);
-        int pos = pawn.color ? 1 : 6;
+        int pos = playerColor == pawn.color ? 1 : 6;
         if (rf[0] == pos && Math.abs(directionOffset) == 8 && isValid(squarePosition, newPos+directionOffset, Piece.PAWN)) {
             //Add square 2 spaces ahead
             possibleMoves.add(new Move(squarePosition,newPos+directionOffset, directionOffset));

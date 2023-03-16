@@ -71,6 +71,8 @@ public class Search {
 
         if (plyFromRoot > 0){
 
+            if (board.isRepeatPosition(board.zobristKey)) return 0;
+
             //Any mate we find cannot be better than one we already found
             alpha = Math.max(alpha, -mateScore+plyFromRoot);
             beta = Math.min(beta, mateScore-plyFromRoot);
@@ -107,7 +109,7 @@ public class Search {
         for (Move legalMove : legalMoves) {
             board.makeMove(legalMove, true);
             int eval = -search(depth-1, -beta, -alpha, plyFromRoot+1);
-            board.unmakeMove(legalMove);
+            board.unmakeMove(legalMove, true);
 
             if (eval >= beta) {
                 tt.storeEvaluation(depth, TranspositionTable.LOWER, eval, legalMove);
@@ -143,7 +145,7 @@ public class Search {
 
             board.makeMove(move, true);
             eval = -quiescenceSearch(-beta, -alpha);
-            board.unmakeMove(move);
+            board.unmakeMove(move, true);
 
             if (eval >= beta) return beta;
             if (eval > alpha) alpha = eval;

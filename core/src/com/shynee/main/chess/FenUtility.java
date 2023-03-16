@@ -43,6 +43,8 @@ public class FenUtility {
         LoadData lData = new LoadData();
         Square[] boardRep = new Square[64];
 
+        if (!playerColor) args[0] = new StringBuilder(args[0]).reverse().toString();
+
         int rank = 7;
         int file = 0;
 

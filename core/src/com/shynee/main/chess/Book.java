@@ -60,7 +60,7 @@ public class Book {
 
             for (int i = 0; i < iterations; i++){
                 Move m = lastMoves.pop();
-                board.unmakeMove(m);
+                board.unmakeMove(m, true);
             }
 
             zobristBook.add(bookQueue);
@@ -93,14 +93,22 @@ public class Book {
         zobristBook.removeIf(q -> q.peek() == null || q.poll().zobristKey != newZobrist);
     }
 
-    public Move getRandomMove(){
+    public Move getRandomMove(boolean color){
         if (zobristBook.size() == 0) return null;
 
         int pos = zobristBook.size() == 1 ? 0 : random.nextInt(zobristBook.size()-1);
         BookElement element = zobristBook.get(pos).poll();
         if (element == null) return null;
 
-        return element.move;
+        Move move = element.move;
+
+        if (color){
+            move.piecePos = 63 - move.piecePos;
+            move.squarePos = 63 - move.squarePos;
+        }
+
+
+        return move;
     }
 
     private String readBook(File file){
