@@ -3,7 +3,7 @@
 A simple Chess Engine built from scratch using Java.
 
 Features:
-- Functioning Chess engine to play against
+- Functioning Chess engine to play against (2000+ ELO on Chess.com)
 - Real time evaluation and search depth information
 
 Project Information:
