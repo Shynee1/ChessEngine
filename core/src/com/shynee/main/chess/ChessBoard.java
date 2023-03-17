@@ -110,8 +110,12 @@ public class ChessBoard {
 
         if (!inSearch) newSquare.getPiece().hasMoved = true;
 
-        if (!inSearch && ((isWhiteCheck && moveCalculator.getLegalMoves(this, true).isEmpty() || (isBlackCheck && moveCalculator.getLegalMoves(this, false).isEmpty())))){
-            System.out.println("checkmate");
+        if (!inSearch && moveCalculator.getLegalMoves(this, true).isEmpty() || moveCalculator.getLegalMoves(this, false).isEmpty()){
+            if (isWhiteCheck || isBlackCheck) {
+                System.out.println("checkmate");
+            } else {
+                System.out.println("draw by stalemate");
+            }
             gameRunning = false;
         }
 

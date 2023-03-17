@@ -70,10 +70,10 @@ public class Search {
         if (abortSearch) return 0;
 
         if (plyFromRoot > 0){
-
+            // Check for draw by repetition
             if (board.isRepeatPosition(board.zobristKey)) return 0;
 
-            //Any mate we find cannot be better than one we already found
+            // Any mate we find cannot be better than one we already found
             alpha = Math.max(alpha, -mateScore+plyFromRoot);
             beta = Math.min(beta, mateScore-plyFromRoot);
             if (alpha>=beta)

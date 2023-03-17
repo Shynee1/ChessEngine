@@ -1,10 +1,15 @@
 package com.shynee.main.components;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.shynee.main.*;
 import com.shynee.main.abstracts.Component;
 import com.shynee.main.chess.ChessBoard;
@@ -22,6 +27,7 @@ public class BoardUI extends Component {
     private final OrthographicCamera camera;
     private final ChessBoard board;
     private final Spritesheet sheet;
+
     private Square[] squares;
 
     public BoardUI(ChessBoard board){

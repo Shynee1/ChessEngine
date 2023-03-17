@@ -7,7 +7,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.shynee.main.chess.Book;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.abstracts.Scene;
-import com.shynee.main.chess.PGNUtility;
 import com.shynee.main.components.*;
 import com.shynee.main.utils.GameObject;
 import com.shynee.main.utils.AssetPool;
@@ -49,13 +48,7 @@ public class ChessScene extends Scene {
 
         GameObject aiPlayer = new GameObject("AiPLayer");
         aiPlayer.addComponent(new AIController(!playerColor, board, book));
-        //addGameObject(aiPlayer);
-
-        GameObject aiPlayer2 = new GameObject("AiPLayer2");
-        aiPlayer2.addComponent(new AIController(playerColor, board, book));
-        //addGameObject(aiPlayer2);
-
-
+        addGameObject(aiPlayer);
     }
 
     @Override
