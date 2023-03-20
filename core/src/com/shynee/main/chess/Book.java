@@ -1,5 +1,7 @@
 package com.shynee.main.chess;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -29,13 +31,13 @@ public class Book {
         this.board = board;
         this.gson = new Gson();
 
-        File file = new File("games/book.txt");
+        FileHandle file = Gdx.files.internal("games/book.txt");
         if (file.exists()) loadBook(file);
         else createBook(file);
     }
 
-    private void createBook(File file){
-        String[] book = readBook(new File("games/games.txt")).split("\n");
+    private void createBook(FileHandle file){
+        String[] book = Gdx.files.internal("games/games.txt").readString().split("\n");
         StringBuilder zobristString = new StringBuilder();
 
         for (String line : book){
@@ -69,8 +71,8 @@ public class Book {
         zobristString.append(gson.toJson(zobristBook));
 
         try {
-            file.createNewFile();
-            FileWriter writer = new FileWriter(file);
+            file.file().createNewFile();
+            FileWriter writer = new FileWriter(file.file());
             writer.write(zobristString.toString());
             writer.close();
         } catch (IOException e) {
@@ -78,8 +80,8 @@ public class Book {
         }
     }
 
-    private void loadBook(File file){
-        String json = readBook(file);
+    private void loadBook(FileHandle file){
+        String json = file.readString();
         BookElement[][] bookElements = gson.fromJson(json, BookElement[][].class);
 
         for (BookElement[] bookQueue : bookElements){
@@ -109,22 +111,5 @@ public class Book {
 
 
         return move;
-    }
-
-    private String readBook(File file){
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            StringBuilder string = new StringBuilder();
-
-            String line = null;
-            while ((line = reader.readLine()) != null){
-                string.append(line);
-                string.append("\n");
-            }
-
-            return string.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
