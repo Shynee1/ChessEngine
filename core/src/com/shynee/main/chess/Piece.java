@@ -1,5 +1,10 @@
 package com.shynee.main.chess;
 
+/**
+ * Piece -- Represents one piece in a chess game.
+ * Contains an int to determine the type of piece
+ * Contains a color to determine the color of the piece
+ */
 public class Piece {
 
     public int type;
@@ -12,6 +17,11 @@ public class Piece {
         this.hasMoved = false;
     }
 
+    /**
+     * Copies the values of one piece into a new piece
+     * @param piece Piece to copy values from
+     * @return New copied piece
+     */
     public static Piece copy(Piece piece){
         Piece newPiece = new Piece(piece.type, piece.color);
         newPiece.hasMoved = piece.hasMoved;
