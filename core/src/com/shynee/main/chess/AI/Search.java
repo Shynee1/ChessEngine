@@ -5,6 +5,9 @@ import com.shynee.main.chess.Move;
 
 import java.util.List;
 
+/**
+ * Search -- Used to search for the best possible move in a given position.
+ */
 public class Search {
 
     private ChessBoard board;
@@ -17,8 +20,10 @@ public class Search {
 
     private boolean abortSearch;
 
+    // Extreme numbers that can be used as alpha/beta values
     private final int positiveInfinity = 9999999;
     private final int negativeInfinity = -positiveInfinity;
+    // Uniquely identifiable number that will not conflict with search
     private final int mateScore = 100000;
 
     private final TranspositionTable tt;
@@ -28,6 +33,12 @@ public class Search {
         this.tt = new TranspositionTable(board, 64000);
     }
 
+    /**
+     * Search a given position with a target depth.
+     * Stops the search when the target depth is reached, mate is found, or search timer expires
+     * @param targetDepth Max depth the search can run to.
+     * @return Best possible move in the position.
+     */
     public Move startSearch(int targetDepth){
         numTranspositions = 0;
         numPositions = 0;
@@ -37,6 +48,7 @@ public class Search {
         int bestEval = 0;
         int finalDepth = 0;
 
+        // Clearing the table prevents weird checkmate bug
         tt.clear();
 
         if (isIterative){
@@ -49,6 +61,7 @@ public class Search {
                 bestEval = bestEvalInIteration;
                 finalDepth = i;
 
+                // Stop the search if mate is found
                 if (isMateScore(bestEval) && finalDepth > 2){
                     break;
                 }
@@ -65,6 +78,14 @@ public class Search {
         return bestMove;
     }
 
+    /**
+     * Performs recursive NegaMax search with alpha-beta pruning.
+     * @param depth Maximum number of moves looked ahead.
+     * @param alpha Lower bounds for search values (initially set to negative infinity)
+     * @param beta Upper bounds for search values (initially set to infinity)
+     * @param plyFromRoot Current number of moves from initial position
+     * @return Maximum evaluation of position
+     */
     private int search(int depth, int alpha, int beta, int plyFromRoot){
         numPositions++;
         if (abortSearch) return 0;
@@ -80,6 +101,7 @@ public class Search {
                 return alpha;
         }
 
+        // Check if the position has already been searched
         int t = tt.lookupEvaluation(depth, alpha, beta);
         if (t != Integer.MIN_VALUE){
             if (plyFromRoot == 0) {
@@ -111,11 +133,13 @@ public class Search {
             int eval = -search(depth-1, -beta, -alpha, plyFromRoot+1);
             board.unmakeMove(legalMove, true);
 
+            // This position is worse than one we have already found
             if (eval >= beta) {
                 tt.storeEvaluation(depth, TranspositionTable.LOWER, eval, legalMove);
                 return beta;
             }
 
+            // This is the best position so far
             if (eval > alpha) {
                 alpha = eval;
                 hashFlag = TranspositionTable.EXACT;
@@ -131,6 +155,15 @@ public class Search {
         return alpha;
     }
 
+    /**
+     * Performs a limited search of all captures before returning a static evaluation.
+     * Used to prevent a false evaluation because search stopped right
+     * before the opponent was able to capture your piece.
+     *
+     * @param alpha Alpha value of the search
+     * @param beta Beta value of the search
+     * @return Static evaluation after all captures have been processed.
+     */
     private int quiescenceSearch(int alpha, int beta){
         int eval = Evaluation.evaluate(board);
 
@@ -154,6 +187,14 @@ public class Search {
         return alpha;
     }
 
+    /**
+     * Detects if a score is checkmate.
+     * It does this by adding the max ply-from-root (1000)
+     * and seeing if the score is above the default mate score.
+     *
+     * @param score The score to be checked.
+     * @return true if the score is a checkmate score
+     */
     public boolean isMateScore(int score){
         return Math.abs(score) + 1000 > mateScore;
     }
