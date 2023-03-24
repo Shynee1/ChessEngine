@@ -93,6 +93,9 @@ public class TranspositionTable {
         return hashTable[getIndex()].bestEval;
     }
 
+    /**
+     * HashData - Used to store a zobrist key and its relevant information in the transposition table
+     */
     class HashData{
 
         public long hash;
