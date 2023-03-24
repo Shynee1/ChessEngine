@@ -3,9 +3,6 @@ package com.shynee.main.chess.AI;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.chess.Move;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 /**
  * TranspositionTable: Used to store/lookup board positions in order to remove searching equivalent positions
  */
