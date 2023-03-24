@@ -2,6 +2,9 @@ package com.shynee.main.chess;
 
 import java.util.List;
 
+/**
+ * BoardUtility: Standard utility class with helpful functions for manipulation the chess board
+ */
 public class BoardUtility {
 
     /**

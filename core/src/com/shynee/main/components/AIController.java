@@ -36,7 +36,7 @@ public class AIController extends Component {
 
         Move bestMove = null;
 
-        bestMove = book.getRandomMove(color);
+        bestMove = book.getRandomMove();
         if (bestMove == null) {
             startSearchTimer();
             bestMove = search.startSearch(30);
