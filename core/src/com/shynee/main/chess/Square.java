@@ -3,6 +3,12 @@ package com.shynee.main.chess;
 import com.badlogic.gdx.graphics.Color;
 import com.shynee.main.utils.Transform;
 
+/**
+ * Square -- Represents one square on the chess board.
+ * Each square can have a piece on it, otherwise the piece is null.
+ * Each square also has an array position that is set on creation.
+ * Each square has a color that is drawn over the square.
+ */
 public class Square {
 
     private Transform transform;
