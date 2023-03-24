@@ -8,7 +8,11 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Book: Used to get a random book move at the start of the game - All book moves capped at 9 moves
+ * Book: Used to get a random book move at the start of the game.
+ * It does this by maintaining a list of grandmaster games in games.txt.
+ * On the first program execution, it converts the games into BookElements and stores the json values in book.txt.
+ * Every other time, it reads book.txt and stores the values in a list of queues.
+ * When a move is made, it removes every queue whose hash of the first move is not equal to the current board position.
  */
 public class Book {
 
