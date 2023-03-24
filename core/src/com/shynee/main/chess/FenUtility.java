@@ -3,14 +3,13 @@ package com.shynee.main.chess;
 import com.badlogic.gdx.math.Vector2;
 import com.shynee.main.utils.Transform;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
-import static com.shynee.main.utils.Constants.MOVE_COLOR;
 import static com.shynee.main.utils.Constants.SQUARE_SIZE;
 
-/*
-  Used to load/save the current board state into FEN notation
+/**
+ * FenUtility -- Used to load/save a board with a given FEN string.
+ * FEN strings represent a board through a string value.
  */
 public class FenUtility {
 
@@ -83,6 +82,7 @@ public class FenUtility {
         lData.boardRepresentation = boardRep;
         lData.colorToMove = args[1].equalsIgnoreCase("w");
 
+        // Add castling rights
         String castling = args.length > 2 ? args[2] : "KQkq";
         lData.whiteCastleKing = castling.contains("K");
         lData.whiteCastleQueen = castling.contains("Q");
@@ -94,16 +94,12 @@ public class FenUtility {
         return lData;
     }
 
-    private static Square[] reverseArray(Square[] array){
-        Square[] newArr = new Square[array.length];
-        int n = array.length;
-        for (Square square : array) {
-            newArr[n - 1] = square;
-            n--;
-        }
-        return newArr;
-    }
-
+    /**
+     * Generates a valid world-coordinate transform given a rank and file
+     * @param rank Rank of the square to be created
+     * @param file File of the square to be created
+     * @return Transform of the square
+     */
     private static Transform generateTransform(int rank, int file){
         return new Transform(new Vector2(SQUARE_SIZE * file, SQUARE_SIZE * rank), new Vector2(SQUARE_SIZE, SQUARE_SIZE));
     }
@@ -150,6 +146,7 @@ public class FenUtility {
         finalFen.append(" ");
         finalFen.append(board.colorToMove() ? 'w' : 'b').append(" ");
 
+        // Append castling rights
         boolean whiteKing = board.whiteKingSquare.hasPiece() && !board.whiteKingSquare.getPiece().hasMoved && board.getSquare(7).hasPiece() && !board.getSquare(7).getPiece().hasMoved;
         finalFen.append(whiteKing ? "K" : "");
         boolean whiteQueen = board.whiteKingSquare.hasPiece() && !board.whiteKingSquare.getPiece().hasMoved && board.getSquare(0).hasPiece() && !board.getSquare(0).getPiece().hasMoved;
@@ -161,6 +158,11 @@ public class FenUtility {
 
         finalFen.append(whiteKing || blackKing || whiteQueen || blackQueen ? "" : "-");
 
+        /*
+        Supposed to be used for valid en-passant file.
+        Since there is no en-passant, always set to null.
+        This allows game FEN to be read by outside applications.
+         */
         finalFen.append(" ");
         finalFen.append("-");
         finalFen.append(" ");
