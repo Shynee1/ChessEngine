@@ -64,7 +64,7 @@ public class Book {
                 if (iterations > 9) break;
 
                 // Convert algebraic notation into a move
-                Move boardMove = PGNUtility.pgnToMove(board, move);
+                Move boardMove = AlgebraicUtility.notationToMove(board, move);
                 if (boardMove == null) continue;
 
                 board.makeMove(boardMove, true);

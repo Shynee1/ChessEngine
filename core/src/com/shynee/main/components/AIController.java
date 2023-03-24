@@ -6,7 +6,6 @@ import com.shynee.main.chess.AI.Search;
 import com.shynee.main.chess.Book;
 import com.shynee.main.chess.ChessBoard;
 import com.shynee.main.chess.Move;
-import com.shynee.main.chess.PGNUtility;
 
 import java.util.List;
 import java.util.Random;
