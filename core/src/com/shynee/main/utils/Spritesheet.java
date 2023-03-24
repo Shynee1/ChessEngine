@@ -3,10 +3,19 @@ package com.shynee.main.utils;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 
+/**
+ * Spritesheet -- Represents a sheet contain multiple sprites
+ */
 public class Spritesheet {
 
     private Sprite[] sprites;
 
+    /**
+     * Fills a Sprite[] with all sprites in the spritesheet
+     * @param texture Texture containing the full spritesheet
+     * @param numSprites Number of sprites in the spritesheet
+     * @param rows Number of rows in the spritesheet
+     */
     public Spritesheet(Texture texture, int numSprites, int rows){
         sprites = new Sprite[numSprites];
 

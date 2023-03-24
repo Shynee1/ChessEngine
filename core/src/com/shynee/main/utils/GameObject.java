@@ -6,6 +6,11 @@ import com.shynee.main.abstracts.Component;
 
 import java.util.HashMap;
 
+/**
+ * GameObject -- Represents an Object in the game.
+ * Each GameObject has a list of components that affect its behavior.
+ * Each GameObject has a transform that affects its virtual space.
+ */
 public class GameObject {
 
     public String name;
