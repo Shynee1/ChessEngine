@@ -6,8 +6,17 @@ import com.shynee.main.chess.Move;
 import java.util.Arrays;
 import java.util.Collections;
 
+/**
+ * TranspositionTable: Used to store/lookup board positions in order to remove searching equivalent positions
+ */
 public class TranspositionTable {
 
+    /*
+     Because of alpha-beta pruning, any position we store may be
+     the exact evaluation or the current alpha/beta values at the time.
+     To get around this issue, we use a flag to determine
+     whether the position was an upper or lower bound.
+     */
     public static final int EXACT = 0;
     public static final int LOWER = 1;
     public static final int UPPER = 2;
@@ -16,20 +25,40 @@ public class TranspositionTable {
     private final HashData[] hashTable;
     private final ChessBoard board;
 
+    /**
+     * Constructor
+     * @param board ChessBoard class containing all important values to the chess game (e.g. check, castling rights, piece position)
+     * @param size Size of the TranspositionTable
+     */
     public TranspositionTable(ChessBoard board, int size){
         this.board = board;
         this.hashTable = new HashData[size];
         this.size = size;
     }
 
+    /**
+     * Stores an evaluation into the table
+     * @param depth Depth of the search
+     * @param flag Indicator of bounds (see above for more details)
+     * @param eval Evaluation of position
+     * @param move Move made before storing
+     */
     public void storeEvaluation(int depth, int flag, int eval, Move move){
         HashData data = new HashData(board.zobristKey, depth, flag, eval, move);
         hashTable[getIndex()] = data;
     }
 
+    /**
+     * Looks up a value from the transposition table
+     * @param depth Current search depth
+     * @param alpha Current alpha in search
+     * @param beta Current beta in search
+     * @return Eval of position or Integer.MIN_VALUE
+     */
     public int lookupEvaluation(int depth, int alpha, int beta){
         HashData data = hashTable[getIndex()];
 
+        // Ignore if the depth of the position is greater than the one already searched to
         if (data == null || data.depth <= depth || data.hash != board.zobristKey) return Integer.MIN_VALUE;
 
         if (data.flag == EXACT)
@@ -48,6 +77,13 @@ public class TranspositionTable {
         }
     }
 
+    /**
+     * Zobrist keys are stored in the transposition table
+     * by taking the modulo of the key and the number of
+     * elements in the table. This is to reduce the index and
+     * still provide a unique index for each position.
+     * @return The index of the current board position in the table
+     */
     private int getIndex(){
         return (int) (board.zobristKey % size);
     }
