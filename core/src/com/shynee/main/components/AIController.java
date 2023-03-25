@@ -10,6 +10,9 @@ import com.shynee.main.chess.Move;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * AIController -- Responsible for controlling all AI movement/decisions
+ */
 public class AIController extends Component {
 
     private final boolean color;
@@ -35,8 +38,10 @@ public class AIController extends Component {
 
         Move bestMove = null;
 
+        // Try to get book move
         bestMove = book.getRandomMove();
         if (bestMove == null) {
+            // Perform timed search if there are no book moves available
             startSearchTimer();
             bestMove = search.startSearch(30);
         }
@@ -45,6 +50,9 @@ public class AIController extends Component {
         book.updateMoves(board.zobristKey);
     }
 
+    /**
+     * Starts a threaded timer to stop the search after a certain time has elapsed.
+     */
     public void startSearchTimer(){
         Thread thread = new Thread(() -> {
             boolean abort = false;
@@ -62,6 +70,9 @@ public class AIController extends Component {
         thread.start();
     }
 
+    /**
+     * @return A completely random move from all possible moves on the board.
+     */
     private Move getRandomMove(){
         Random random = new Random();
 

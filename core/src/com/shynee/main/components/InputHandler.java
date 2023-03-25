@@ -9,6 +9,9 @@ import com.shynee.main.Main;
 import com.shynee.main.abstracts.Component;
 import com.shynee.main.utils.Constants;
 
+/**
+ * InputHandler -- Responsible for reading/processing all keyboard/mouse input
+ */
 public class InputHandler extends Component {
 
     private final ChessBoard board;
@@ -42,7 +45,13 @@ public class InputHandler extends Component {
         else handleMoveClick(boardPos);
     }
 
+    /**
+     * Handles the initial click to select piece to move.
+     * Updates 'hasClicked' boolean notify that a piece has been selected
+     * @param clickedSquare The square originally clicked
+     */
     private void handleFirstClick(int clickedSquare){
+        // Check if the clicked square contains a piece of the correct color
         if (!board.getSquare(clickedSquare).hasPiece() || board.getSquare(clickedSquare).getPiece().color != board.colorToMove() || !board.gameRunning) return;
 
         this.previousClickedSquarePos = clickedSquare;
@@ -53,9 +62,15 @@ public class InputHandler extends Component {
         this.hasClicked = true;
     }
 
+    /**
+     * Handles second click to move previously clicked square to new square position.
+     * This method must be called after handleFirstClick() or an error will occur.
+     * @param clickedSquare The square for the piece to move to.
+     */
     private void handleMoveClick(int clickedSquare){
         this.hasClicked = false;
 
+        // Check if the previously clicked square is able to move to the new square
         if (!board.validateMove(previousClickedSquarePos, clickedSquare)) {
             board.clearUI();
             return;
@@ -69,6 +84,7 @@ public class InputHandler extends Component {
         worldCoords.x += mouseOffset;
         worldCoords.y = Constants.WORLD_HEIGHT - worldCoords.y;
 
+        // Convert screen coordinates to board position by dividing the coordinates by the size of each square
         return BoardUtility.getArrayIndex((int) worldCoords.y/squareSize, (int) worldCoords.x/squareSize);
     }
 
