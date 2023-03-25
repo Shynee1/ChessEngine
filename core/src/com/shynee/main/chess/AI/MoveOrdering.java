@@ -74,8 +74,6 @@ public class MoveOrdering {
         return moves;
     }
 
-
-
     private static void swap(List<Move> moves, int[] moveScores, int posOne, int posTwo){
         Move tempM = moves.get(posOne);
         moves.set(posOne, moves.get(posTwo));
