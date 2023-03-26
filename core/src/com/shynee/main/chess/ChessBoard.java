@@ -4,10 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.shynee.main.chess.AI.Zobrist;
 import com.shynee.main.utils.Constants;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class ChessBoard {
 
@@ -39,6 +36,8 @@ public class ChessBoard {
     public Square blackKingSquare;
     public boolean isBlackCheck;
 
+    public boolean isDoubleCheck;
+
     private boolean colorToMove;
 
     public ChessBoard(String FEN, boolean playerColor){
@@ -48,6 +47,7 @@ public class ChessBoard {
 
         this.isWhiteCheck = false;
         this.isBlackCheck = false;
+        this.isDoubleCheck = false;
 
         this.possibleMoves = new HashMap<>();
 
@@ -242,8 +242,11 @@ public class ChessBoard {
         List<Move> moveIntersection = moveCalculator.findMoveIntersection(kingSquare, !color);
         if (moveIntersection.isEmpty()) return false;
 
+        HashSet<Integer> checkingPieces = new HashSet<>();
+
         for (Move checkMove : moveIntersection){
             Square attackingPiece = board[checkMove.piecePos];
+            checkingPieces.add(checkMove.piecePos);
 
             List<Move> legalMoves = moveCalculator.getLegalMovesForSquare(attackingPiece, checkMove.directionOffset);
 
@@ -259,6 +262,8 @@ public class ChessBoard {
 
             check = true;
         }
+
+        this.isDoubleCheck = checkingPieces.size() > 1;
 
         return check;
     }
