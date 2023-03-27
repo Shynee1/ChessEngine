@@ -118,9 +118,9 @@ public class MoveCalculator {
 
     /**
      * Finds all possible moves that can block a checking attack.
-     * @param blockingMoves
-     * @param color
-     * @return
+     * @param blockingMoves List of the legal moves for the checking pieces (aka moves to be blocked)
+     * @param color Color of the pieces to block (opposite of checking pieces)
+     * @return List of all possible blocking moves
      */
     private List<Move> recomputeBlocks(List<Move> blockingMoves, boolean color){
         List<Move> possibleBlocks = new ArrayList<>();
@@ -135,16 +135,31 @@ public class MoveCalculator {
         return possibleBlocks;
     }
 
-
+    /**
+     * Finds all legal moves that intersect a given square.
+     * This means that the final square of the move is equal to the target square.
+     * Used to block checking attacks, find king moves, etc.
+     *
+     * @param square Target square to be intersected.
+     * @param color Color of the pieces to check for intersection.
+     * @param includeColor True if same-color pieces should be considered in legal moves (used to stop king from taking protected piece)
+     * @param forBlocks True if method is called to find blocking moves
+     * @param isKing True if method is called to find king moves
+     * @return List of legal moves that intersect the given square (can be from a number of pieces)
+     */
     public List<Move> findLegalMoveIntersection(Square square, boolean color, boolean includeColor, boolean forBlocks, boolean isKing) {
         List<Move> legalMoveIntersection = new ArrayList<>();
 
+        // Basically get all legal moves but include boolean flags (include color, forBlocks, isKing)
+        // Also ignore check
         for (Square s : pseudoMoves.keySet()) {
             if (s.getPiece().color != color) continue;
 
             List<Move> legals = getLegalMovesForSquare(s, isKing, includeColor);
             for (Move move : legals){
+                // Obviously a king cannot block checking moves
                 if (forBlocks && squares[move.piecePos].getPiece().type == Piece.KING) continue;
+                // Actually check for intersection
                 if (move.squarePos == square.getArrayPosition()) legalMoveIntersection.add(move);
             }
         }
@@ -152,6 +167,14 @@ public class MoveCalculator {
         return legalMoveIntersection;
     }
 
+    /**
+     * Finds all pseudo moves that intersect a given square.
+     * This means that the final square of the move is equal to the target square.
+     *
+     * @param square Target square to be intersected.
+     * @param color Color of the pieces to check for intersection.
+     * @return List of pseudo moves that intersect the given square (can be from a number of pieces)
+     */
     public List<Move> findMoveIntersection(Square square, boolean color){
         List<Move> intersectedSquares = new ArrayList<>();
 
@@ -164,31 +187,49 @@ public class MoveCalculator {
         return intersectedSquares;
     }
 
-    public List<Move> getLegalMovesForSquare(Square square, int directionOffset){
-        List<Move> res = new ArrayList<>();
-        for (Move m : getLegalMovesForSquare(square, false, false)){
-            if (m.directionOffset == directionOffset) res.add(m);
-        }
-        return res;
-    }
-
+    /**
+     * Finds all legal moves for the king
+     *
+     * @param kingSquare Square that contains the king
+     * @param isColorChecked True if the king is currently being checked
+     * @param checkingMoves All pseudo moves that are checking the king
+     * @return
+     */
     private List<Move> getLegalKingMoves(Square kingSquare, boolean isColorChecked, List<Move> checkingMoves){
 
         List<Move> legalMoves = new ArrayList<>();
         int kingPos = kingSquare.getArrayPosition();
 
+        // Check for castling
         if (canCastle(kingSquare, true) && !isColorChecked) legalMoves.add(new Move(kingPos,kingPos+3, 1).setCastle());
         if (canCastle(kingSquare, false) && !isColorChecked) legalMoves.add(new Move(kingPos, kingPos-4, -1).setCastle());
 
         for (Move m : getLegalMovesForSquare(kingSquare, false, false)){
+            // Can't move to a square that is attacked by an opponent piece
             if (findLegalMoveIntersection(squares[m.squarePos], !kingSquare.getPiece().color, true, false, true).isEmpty()) legalMoves.add(m);
             if (!isColorChecked) continue;
+
+            /*
+            This is done to prevent the king from moving into
+            a square that is being checked in the same direction
+            of a checking piece. Normal legal moves wouldn't detect
+            this because they stop once the king is reached, so we have to
+            additionally check the pseudo moves of all checking pieces.
+             */
             if (containsMove(m, checkingMoves)) legalMoves.remove(m);
         }
 
         return legalMoves;
     }
 
+    /**
+     * Checks if the final position of a move is equal to the
+     * final position of any move in a list of moves.
+     *
+     * @param m Move containing final position.
+     * @param moves List of moves to check against.
+     * @return True if the list of moves contains the final position.
+     */
     private boolean containsMove(Move m, List<Move> moves){
         for (Move move : moves){
             if (m.squarePos == move.squarePos && move.directionOffset != 0) return true;
@@ -197,16 +238,24 @@ public class MoveCalculator {
         return false;
     }
 
+    /**
+     * Checks if a king can castle in a given direction.
+     * @param kingSquare Square containing the king.
+     * @param kingSide True if castling kingside
+     * @return True if the king can castle in the direction.
+     */
     public boolean canCastle(Square kingSquare, boolean kingSide){
         if (!kingSquare.hasPiece() || kingSquare.getPiece().hasMoved) return false;
 
         int addRookIdx = kingSide ? 3 : -4;
+        // Check if rook position is in bounds before indexing the array
         if (kingSquare.getArrayPosition() + addRookIdx >= 64 || kingSquare.getArrayPosition() + addRookIdx < 0) return false;
 
         Square rookSquare = squares[kingSquare.getArrayPosition()+addRookIdx];
-
+        // Check if the rook square actually has a rook and if the rook has moved
         if (!rookSquare.hasPiece() || rookSquare.getPiece().hasMoved || rookSquare.getPiece().type != Piece.ROOK) return false;
 
+        // Check if any of the squares between the rook and the king have pieces or are being attacked
         if (kingSide){
             for (int i = kingSquare.getArrayPosition()+1; i < kingSquare.getArrayPosition() + addRookIdx; i++){
                 if (squares[i].hasPiece() || !findLegalMoveIntersection(squares[i], !kingSquare.getPiece().color, false, false, true).isEmpty()) return false;
@@ -220,12 +269,39 @@ public class MoveCalculator {
         return true;
     }
 
+    /**
+     * Finds all legal moves for a square that are in the given direction.
+     *
+     * @param square Square to get legal moves for.
+     * @param directionOffset Direction of the moves to be returned
+     * @return List of legal moves for the square that contain the direction offset
+     */
+    public List<Move> getLegalMovesForSquare(Square square, int directionOffset){
+        List<Move> res = new ArrayList<>();
+        for (Move m : getLegalMovesForSquare(square, false, false)){
+            if (m.directionOffset == directionOffset) res.add(m);
+        }
+        return res;
+    }
+
+    /**
+     * Finds all pseudo moves for a square that are in the given direction.
+     * @param square Square to get pseudo moves for.
+     * @param directionOffset Direction of the moves to be returned.
+     * @return List of pseudo moves for the square that contain the direction offset
+     */
     public List<Move> getMovesForSquare(Square square, int directionOffset){
         List<Move> pseudoDirection = new ArrayList<>(pseudoMoves.get(square));
         pseudoDirection.removeIf(m -> m.directionOffset != directionOffset);
         return pseudoDirection;
     }
 
+    /**
+     * Checks if one of the final positions in a list of moves is equal to the position of a Square
+     * @param moves List of moves to be checked
+     * @param square Square to check against
+     * @return The move that contains the square, null if otherwise
+     */
     private Move containsSquare(List<Move> moves, Square square){
         for (Move m : moves){
             if (square.getArrayPosition() == m.squarePos) return m;
@@ -233,6 +309,16 @@ public class MoveCalculator {
         return null;
     }
 
+    /**
+     * Finds all legal moves for a given piece.
+     * Accounts for check and pinned pieces.
+     *
+     * @param square Square that contains the piece to generate legal moves for
+     * @param isColorChecked True if the piece's king is in check
+     * @param checkingMoves List of all moves that are checking the king.
+     * @param pinnedPieces List of all pinned pieces and their attacking moves.
+     * @return List of all legal moves for the given piece.
+     */
     public List<Move> getLegalMovesForSquare(Square square, boolean isColorChecked, List<Move> checkingMoves, List<Move> pinnedPieces){
         List<Move> legalMoves = new ArrayList<>();
 
@@ -247,6 +333,15 @@ public class MoveCalculator {
         return legalMoves;
     }
 
+    /**
+     * Finds legal moves for a piece.
+     * Does not account for check and pinned pieces.
+     *
+     * @param square Square that contains the piece to generate legal moves for
+     * @param inKingIntersection True if this method was called to find the legal move intersection for a king.
+     * @param includeColor True if same-color pieces should be considered in legal moves (used to stop king from taking protected piece)
+     * @return List of legal moves for the piece.
+     */
     public List<Move> getLegalMovesForSquare(Square square, boolean inKingIntersection, boolean includeColor){
         List<Move> pseudoMovesForSquare = pseudoMoves.get(square);
         List<Move> legalMoves = new ArrayList<>();
@@ -263,7 +358,7 @@ public class MoveCalculator {
                     if (!s.hasPiece() && !inKingIntersection) continue;
                 } else {
                     if (squares[m.squarePos].hasPiece() || inKingIntersection) continue;
-
+                    // Used to stop pawns from "jumping" over pieces when they move two squares
                     int firstSquarePos = square.getPiece().color == playerColor ? m.squarePos-8 : m.squarePos+8;
                     if (firstSquarePos != m.piecePos && (squares[firstSquarePos].hasPiece() || square.getPiece().hasMoved)) continue;
                 }
@@ -280,6 +375,14 @@ public class MoveCalculator {
         return legalMoves;
     }
 
+    /**
+     * Calculates the pseudo moves for a given piece.
+     * It does ths by looping over every direction for the piece
+     * and calculating the moves for the piece in that direction.
+     *
+     * @param square Square that contains the piece
+     * @return List of all pseudo moves for the piece.
+     */
     private List<Move> calculateMove(Square square){
         this.possibleMoves = new ArrayList<>();
         this.primaryPieceColor = square.getPiece().color;
@@ -301,6 +404,13 @@ public class MoveCalculator {
         return possibleMoves;
     }
 
+    /**
+     * Calculates the pseudo moves for a pawn.
+     * This contains attacking squares even if there is no piece.
+     * It does not contain a double pawn push if one is not available.
+     *
+     * @param directionOffset Direction of the moves to calculate.
+     */
     private void calculatePawnMove(int directionOffset) {
         if (primaryPieceColor != playerColor) directionOffset = -directionOffset;
 
@@ -309,6 +419,7 @@ public class MoveCalculator {
 
         if (!isValid(squarePosition, newPos, Piece.PAWN)) return;
 
+        // A pawn can only move two squares if it's on its starting rank
         int[] rf = BoardUtility.getRankAndFile(squarePosition);
         int pos = playerColor == pawn.color ? 1 : 6;
         if (rf[0] == pos && Math.abs(directionOffset) == 8 && isValid(squarePosition, newPos+directionOffset, Piece.PAWN)) {
@@ -318,12 +429,20 @@ public class MoveCalculator {
 
         Move pawnMove = new Move(squarePosition, newPos, directionOffset);
 
+        // Check for promotion
         int promotionSquare = primaryPieceColor == playerColor ? 7 : 0;
         if (squares[newPos].getTransform().position.y/90 == promotionSquare) pawnMove.setPromotion();
 
         possibleMoves.add(pawnMove);
     }
 
+    /**
+     * Calculates the pseudo moves for all non-sliding pieces.
+     * A non-sliding piece is a piece that moves in a fixed direction.
+     * This method is called for a knight and a king because pawns have their own method.
+     *
+     * @param directionOffset Direction of the moves to calculate.
+     */
     private void calculateNonSlidingMove(int directionOffset){
         int newPos = squarePosition+directionOffset;
 
@@ -332,6 +451,13 @@ public class MoveCalculator {
         possibleMoves.add(new Move(squarePosition, newPos, directionOffset));
     }
 
+    /**
+     * Calculates the pseudo moves for a sliding piece.
+     * A sliding piece has a direction offset that is added for every square.
+     * This method is called for a bishop, rook, and queen.
+     *
+     * @param directionOffset Direction of the moves to calculate.
+     */
     private void calculateSlidingMove(int directionOffset){
         int newPos = squarePosition+directionOffset;
         int prevPos = squarePosition;
@@ -339,11 +465,24 @@ public class MoveCalculator {
         while (isValid(prevPos, newPos, square.getPiece().type)) {
             possibleMoves.add(new Move(squarePosition, newPos, directionOffset));
 
+            // Keep adding the direction offset until the end of the board is reached.
             prevPos = newPos;
             newPos += directionOffset;
         }
     }
 
+    /**
+     * Checks whether a move is valid for a given piece type.
+     * A move is valid if it follows the rules of the piece
+     * and does not leave the bounds of the board.
+     * Used to prevent direction offsets from overflowing into
+     * different ranks/files due to their 1d nature.
+     *
+     * @param prevPos Previous position of the move to be checked.
+     * @param currentPos New position of the move to be checked.
+     * @param type Type of the piece.
+     * @return True if the move follows the rules of the piece and does not leave the bounds of the board.
+     */
     private boolean isValid(int prevPos, int currentPos, int type){
         int[] newRF = BoardUtility.getRankAndFile(currentPos);
         int[] prevRF = BoardUtility.getRankAndFile(prevPos);
@@ -357,6 +496,18 @@ public class MoveCalculator {
         return (currentPos >= 0 && currentPos < 64) && isValidForType;
     }
 
+    /**
+     * Checks the max spacing between two ranks/files.
+     * Used in isValid() to prevent direction overflow.
+     *
+     * @param prevRank Rank of the previous position.
+     * @param newRank Rank of the new position.
+     * @param prevFile File of the previous position.
+     * @param newFile File of the new position.
+     * @param target Bounds of the max spacing.
+     * @param equals True if the max spacing should be equal to the bounds.
+     * @return True if the max spacing is less than or equal to the bounds.
+     */
     private boolean checkSpacing(int prevRank, int newRank, int prevFile, int newFile, int target, boolean equals){
         int max = Math.max(Math.abs(prevRank - newRank), Math.abs(prevFile - newFile));
         return equals ? (max == target) : (max <= target);
