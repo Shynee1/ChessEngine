@@ -193,7 +193,7 @@ public class MoveCalculator {
      * @param kingSquare Square that contains the king
      * @param isColorChecked True if the king is currently being checked
      * @param checkingMoves All pseudo moves that are checking the king
-     * @return
+     * @return List of all legal moves for the king
      */
     private List<Move> getLegalKingMoves(Square kingSquare, boolean isColorChecked, List<Move> checkingMoves){
 
