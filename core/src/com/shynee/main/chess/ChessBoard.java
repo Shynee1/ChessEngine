@@ -6,6 +6,11 @@ import com.shynee.main.utils.Constants;
 
 import java.util.*;
 
+/**
+ * ChessBoard -- Responsible for all things relating to the virtual chess board.
+ * This includes moving/unmoving pieces, keeping track of check/draw/pinned pieces, etc.
+ * Also includes functions to highlight squares and legal moves.
+ */
 public class ChessBoard {
 
     private Square[] board;
@@ -24,7 +29,7 @@ public class ChessBoard {
     public final List<Move> blockingMoves;
 
     public long zobristKey;
-    public boolean gameRunning = false;
+    public boolean gameRunning;
     public boolean playerColor;
 
     public int numPly = 0;
@@ -61,15 +66,23 @@ public class ChessBoard {
 
         this.moveCalculator = new MoveCalculator();
 
+        // Generate random zobrist numbers
         Zobrist.initializeKeys();
-
+        // Create board based on FEN
         loadPosition(FEN, playerColor);
-
+        // Precompute pseudo moves
         moveCalculator.precomputeMoves(this, playerColor);
 
         this.gameRunning = true;
     }
 
+    /**
+     * Moves a piece in the chess game.
+     * Also keeps track of mate/draw.
+     *
+     * @param move Move to make on the board.
+     * @param inSearch True if the method is called while searching for the best move.
+     */
     public void makeMove(Move move, boolean inSearch) {
         Square previousSquare = board[move.piecePos];
         Square newSquare = board[move.squarePos];
@@ -79,6 +92,7 @@ public class ChessBoard {
         checkingMoves.clear();
         blockingMoves.clear();
 
+        // Increment move counters
         numPly++;
         numPlyForDraw++;
 
@@ -95,11 +109,13 @@ public class ChessBoard {
             previousSquare.setPiece(null);
         }
 
+        // Update king positions
         if (newSquare.hasKing()) {
             if (newSquare.getPiece().color) this.whiteKingSquare = newSquare;
             else this.blackKingSquare = newSquare;
         }
 
+        // Highlight moves
         highlightSquare(previousSquare, Constants.MOVE_COLOR);
         highlightSquare(newSquare, Constants.MOVE_COLOR);
 
@@ -133,6 +149,7 @@ public class ChessBoard {
         this.colorToMove = !colorToMove;
 
         if (!inSearch){
+            // Clear draw counter if a piece or pawn was captured
             if (newSquare.getPiece().type == Piece.PAWN || captures.peek() != null){
                 numPlyForDraw = 0;
                 boardHistory.clear();
@@ -140,10 +157,16 @@ public class ChessBoard {
                 boardHistory.push(zobristKey);
             }
         }
-
-        //if (!inSearch) System.out.println(FenUtility.savePosition(this));
     }
 
+    /**
+     * Unmakes a move on the board.
+     * This includes unmoving pieces, decrementing counters, replace takes, etc.
+     * The piecePos/squarePos of the move are flipped (squarePos = current, piecePos = new)
+     *
+     * @param move Move to unmake on the board.
+     * @param inSearch True if the method is called while searching for the best move.
+     */
     public void unmakeMove(Move move, boolean inSearch){
         Square startSquare = board[move.piecePos];
         Square newSquare = board[move.squarePos];
@@ -153,10 +176,11 @@ public class ChessBoard {
         checkingMoves.clear();
         blockingMoves.clear();
 
+        // Remove last capture and decrement moves
         Piece lastCapture = captures.pop();
-
         numPly--;
 
+        // Reset king position
         if (newSquare.hasKing() && !move.isCastle){
             if (newSquare.getPiece().color) whiteKingSquare = startSquare;
             else blackKingSquare = startSquare;
@@ -197,9 +221,11 @@ public class ChessBoard {
             moveCalculator.recomputeMoves(this, newSquare, newSquare);
         }
 
+        // Recompute check
         this.isWhiteCheck = handleCheck(true);
         this.isBlackCheck = handleCheck(false);
 
+        // Reset zobrist key
         this.zobristKey = Zobrist.generateKey(this);
 
         this.colorToMove = !colorToMove;
@@ -209,6 +235,12 @@ public class ChessBoard {
         }
     }
 
+    /**
+     * Handles castling by moving the correctly moving the king/rook.
+     * @param kingSquare Square that contains the king.
+     * @param directionOffset Direction of the castle (1 = kingside, -1 = queenside)
+     * @return Square the contains the king after moving.
+     */
     private Square handleCastle(Square kingSquare, int directionOffset){
         boolean isNegative = directionOffset > 0;
 
@@ -226,6 +258,7 @@ public class ChessBoard {
         newRookSquare.setPiece(rookSquare.getPiece());
         newKingSquare.setPiece(kingSquare.getPiece());
 
+        // Recompute rook moves
         moveCalculator.recomputeMoves(this, rookSquare, newRookSquare);
 
         kingSquare.setPiece(null);
@@ -234,28 +267,38 @@ public class ChessBoard {
         return newKingSquare;
     }
 
+    /**
+     * Determines whether the king is in check.
+     * Also updates pinned pieces and checking moves.
+     *
+     * @param color Color of the king to determine check.
+     * @return True if the king of the color is in check.
+     */
     private boolean handleCheck(boolean color){
         Square kingSquare = color ? whiteKingSquare : blackKingSquare;
-
         boolean check = false;
 
         List<Move> moveIntersection = moveCalculator.findMoveIntersection(kingSquare, !color);
         if (moveIntersection.isEmpty()) return false;
 
+        // Used to determine double check
         HashSet<Integer> checkingPieces = new HashSet<>();
 
+        // Iterate through all pseudo moves that contain the king
         for (Move checkMove : moveIntersection){
             Square attackingPiece = board[checkMove.piecePos];
             checkingPieces.add(checkMove.piecePos);
 
             List<Move> legalMoves = moveCalculator.getLegalMovesForSquare(attackingPiece, checkMove.directionOffset);
 
+            // Check for pinned pieces (pseudo moves contain king but legal moves don't)
             if (!BoardUtility.containsSquare(legalMoves, kingSquare)) {
                 Move pinnedPiece = BoardUtility.getPieceIfOne(board, legalMoves, color);
                 if (pinnedPiece != null && BoardUtility.numPieces(board, moveCalculator.getMovesForSquare(attackingPiece, checkMove.directionOffset)) == 1) pinnedPieces.add(pinnedPiece);
                 continue;
             }
 
+            // Update checking/blocking moves
             checkingMoves.addAll(moveCalculator.getMovesForSquare(attackingPiece, checkMove.directionOffset));
             blockingMoves.addAll(moveCalculator.getLegalMovesForSquare(attackingPiece, checkMove.directionOffset));
             blockingMoves.add(new Move(checkMove.piecePos, checkMove.piecePos, 0));
@@ -268,6 +311,10 @@ public class ChessBoard {
         return check;
     }
 
+    /**
+     * Finds all possible moves for a given piece and displays them on the screen.
+     * @param squarePosition Array position of the square to generate moves for.
+     */
     public void generatePossibleMoves(int squarePosition){
         List<Move> legalMoves = moveCalculator.getLegalMoves(this, colorToMove);
         legalMoves.removeIf(m-> m.piecePos!=squarePosition);
@@ -283,8 +330,10 @@ public class ChessBoard {
     }
 
     /**
-     * Loads board/values from FEN string
-     * @param fen FEN string to load
+     * Uses FENUtility to generate load data based on FEN string.
+     * Takes LoadData and applies it current board state.
+     *
+     * @param fen FEN string to load.
      */
     public void loadPosition(String fen, boolean color){
         LoadData boardData = FenUtility.loadPosition(fen, color);
@@ -294,12 +343,14 @@ public class ChessBoard {
         this.whiteKingSquare = boardData.whiteKingSquare;
         this.blackKingSquare = boardData.blackKingSquare;
 
+        // Update castling rights
         if (!boardData.whiteCastleKing && board[7].hasPiece()) board[7].getPiece().hasMoved = true;
         if (!boardData.whiteCastleQueen && board[0].hasPiece()) board[0].getPiece().hasMoved = true;
         if (!boardData.blackCastleKing && board[63].hasPiece()) board[63].getPiece().hasMoved = true;
         if (!boardData.blackCastleQueen && board[56].hasPiece()) board[56].getPiece().hasMoved = true;
 
         this.numPly = boardData.plyCount;
+        // Recompute zobrist key
         this.zobristKey = Zobrist.generateKey(this);
     }
 
@@ -330,6 +381,12 @@ public class ChessBoard {
         possibleMoves.clear();
     }
 
+    /**
+     * Checks if a move is legal on the current board state.
+     * @param prev Current position of the piece.
+     * @param current New position to move the piece to.
+     * @return True if the move is legal.
+     */
     public boolean validateMove(int prev, int current){
         Square prevSquare = board[prev];
         Square currentSquare = board[current];
