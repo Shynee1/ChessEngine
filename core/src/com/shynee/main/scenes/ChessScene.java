@@ -48,7 +48,7 @@ public class ChessScene extends Scene {
 
         GameObject aiPlayer = new GameObject("AiPLayer");
         aiPlayer.addComponent(new AIController(!playerColor, board, book));
-        addGameObject(aiPlayer);
+        //addGameObject(aiPlayer);
     }
 
     @Override

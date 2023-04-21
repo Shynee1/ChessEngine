@@ -10,7 +10,10 @@ import java.util.List;
  */
 public class Search {
 
-    private ChessBoard board;
+    private final ChessBoard board;
+    private final MoveOrdering moveOrdering;
+    private final TranspositionTable tt;
+
     private Move bestMoveInIteration;
     private Move bestMove = null;
 
@@ -26,11 +29,10 @@ public class Search {
     // Uniquely identifiable number that will not conflict with search
     private final int mateScore = 100000;
 
-    private final TranspositionTable tt;
-
     public Search(ChessBoard board){
         this.board = board;
         this.tt = new TranspositionTable(board, 64000);
+        this.moveOrdering = new MoveOrdering();
     }
 
     /**
@@ -127,7 +129,7 @@ public class Search {
             return 0; //Stalemate
         }
 
-        legalMoves = MoveOrdering.orderMoves(board, legalMoves);
+        legalMoves = moveOrdering.orderMoves(board, legalMoves);
         for (Move legalMove : legalMoves) {
             board.makeMove(legalMove, true);
             int eval = -search(depth-1, -beta, -alpha, plyFromRoot+1);
@@ -172,7 +174,7 @@ public class Search {
 
         boolean color = board.colorToMove();
         List<Move> legalCaptures = board.getMoveCalculator().getLegalCaptures(board, color);
-        MoveOrdering.orderMoves(board, legalCaptures);
+        moveOrdering.orderMoves(board, legalCaptures);
 
         for (Move move : legalCaptures) {
 
