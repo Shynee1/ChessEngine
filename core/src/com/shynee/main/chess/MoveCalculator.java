@@ -159,7 +159,7 @@ public class MoveCalculator {
             for (Move move : legals){
                 // Obviously a king cannot block checking moves
                 if (forBlocks && squares[move.piecePos].getPiece().type == Piece.KING) continue;
-                // Actually check for intersection
+                // Check for intersection
                 if (move.squarePos == square.getArrayPosition()) legalMoveIntersection.add(move);
             }
         }
