@@ -86,7 +86,8 @@ public class TranspositionTable {
     }
 
     public Move getCurrentMove(){
-        return hashTable[getIndex()].bestMove;
+        HashData data =  hashTable[getIndex()];
+        return data != null ? data.bestMove : null;
     }
 
     public int getCurrentEval(){

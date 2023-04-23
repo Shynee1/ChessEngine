@@ -129,7 +129,7 @@ public class Search {
             return 0; //Stalemate
         }
 
-        legalMoves = moveOrdering.orderMoves(board, legalMoves);
+        legalMoves = moveOrdering.orderMoves(board, tt, legalMoves);
         for (Move legalMove : legalMoves) {
             board.makeMove(legalMove, true);
             int eval = -search(depth-1, -beta, -alpha, plyFromRoot+1);
@@ -174,7 +174,7 @@ public class Search {
 
         boolean color = board.colorToMove();
         List<Move> legalCaptures = board.getMoveCalculator().getLegalCaptures(board, color);
-        moveOrdering.orderMoves(board, legalCaptures);
+        moveOrdering.orderMoves(board, tt, legalCaptures);
 
         for (Move move : legalCaptures) {
 

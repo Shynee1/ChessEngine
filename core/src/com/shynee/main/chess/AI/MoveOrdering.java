@@ -11,7 +11,7 @@ import java.util.List;
  * MoveOrdering -- Static class used to order moves by how likely they are to be a good move
  * This should theoretically help the speed of the search and prioritize certain moves in a "quiet" position
  */
-public class MoveOrdering implements Comparator<Move>{
+public class MoveOrdering implements Comparator<Move> {
 
     // Increase capture score so that a capture of any kind is always the best move
     private final static int pieceCaptureMultiplier = 10;
@@ -27,7 +27,7 @@ public class MoveOrdering implements Comparator<Move>{
      * @param moves List of moves to be ordered
      * @return New list of moves sorted by how likely each move is to be a good move.
      */
-    public List<Move> orderMoves(ChessBoard board, List<Move> moves){
+    public List<Move> orderMoves(ChessBoard board, TranspositionTable table, List<Move> moves){
         moveScores = new int[maxMoveCount];
 
         for (int i = 0; i < moves.size(); i++){
@@ -48,6 +48,9 @@ public class MoveOrdering implements Comparator<Move>{
             if (movePiece.type == Piece.PAWN){
                 if (move.isPromotion) score += Evaluation.getPieceValue(Piece.QUEEN);
             }
+
+            if (Move.isSameMove(move, table.getCurrentMove()))
+                score += 10000;
 
             moveScores[i] = score;
         }

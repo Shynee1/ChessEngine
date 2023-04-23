@@ -34,4 +34,11 @@ public class Move{
         return sortIndex;
     }
 
+    public static boolean isSameMove(Move m1, Move m2){
+        if (m1 == null || m2 == null)
+            return false;
+
+        return m1.squarePos == m2.squarePos && m1.piecePos == m2.piecePos && m1.isCastle == m2.isCastle && m1.isPromotion == m2.isPromotion;
+    }
+
 }
