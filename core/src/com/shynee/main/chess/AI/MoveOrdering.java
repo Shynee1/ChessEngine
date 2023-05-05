@@ -49,9 +49,6 @@ public class MoveOrdering implements Comparator<Move> {
                 if (move.isPromotion) score += Evaluation.getPieceValue(Piece.QUEEN);
             }
 
-            if (Move.isSameMove(move, table.getCurrentMove()))
-                score += 10000;
-
             moveScores[i] = score;
         }
 
