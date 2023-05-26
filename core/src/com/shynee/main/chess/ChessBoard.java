@@ -287,7 +287,6 @@ public class ChessBoard {
         // Iterate through all pseudo moves that contain the king
         for (Move checkMove : moveIntersection){
             Square attackingPiece = board[checkMove.piecePos];
-            checkingPieces.add(checkMove.piecePos);
 
             List<Move> legalMoves = moveCalculator.getLegalMovesForSquare(attackingPiece, checkMove.directionOffset);
 
@@ -297,6 +296,8 @@ public class ChessBoard {
                 if (pinnedPiece != null && BoardUtility.numPieces(board, moveCalculator.getMovesForSquare(attackingPiece, checkMove.directionOffset)) == 1) pinnedPieces.add(pinnedPiece);
                 continue;
             }
+
+            checkingPieces.add(checkMove.piecePos);
 
             // Update checking/blocking moves
             checkingMoves.addAll(moveCalculator.getMovesForSquare(attackingPiece, checkMove.directionOffset));
