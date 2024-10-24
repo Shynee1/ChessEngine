@@ -1,6 +1,6 @@
 # ChessEngine
 
-A simple Chess Engine built from scratch using Java.
+A simple Chess Engine built from scratch using Java. \
 Paper: https://docs.google.com/document/d/1FmzyMskp5cH1NqH1BmDZzTjVIRv_IGA1aB3PortDNeE/edit?tab=t.0
 
 ## **Features**
